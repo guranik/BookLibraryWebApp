@@ -79,6 +79,14 @@ namespace BookLibraryAPI.Services
             }
         }
 
+        public void ReturnBook(int bookId)
+        {
+            var book = _context.Books.FirstOrDefault(b => b.Id == bookId);
+
+                book.BookNumber++;
+                _context.SaveChanges();
+        }
+
         public IEnumerable<Book> GetByAuthor(int authorId)
         {
             return _context.Books.Include(b => b.Author).Include(b => b.Genre)

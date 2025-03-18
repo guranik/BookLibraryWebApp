@@ -5,6 +5,7 @@ using BookLibraryAPI.Services;
 using System.Threading.Tasks;
 using BookLibraryAPI.Interfaces;
 using System.Runtime.CompilerServices;
+using BookLibraryAPI.Middleware;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -13,10 +14,12 @@ namespace BookLibraryAPI.Controllers
     public class BooksController : ControllerBase
     {
         private readonly IAllBooks _bookService;
+        private readonly IAllIssuedBooks _issuedBookService;
 
-        public BooksController(IAllBooks bookService)
+        public BooksController(IAllBooks bookService, IAllIssuedBooks issuedBookService)
         {
             _bookService = bookService;
+            _issuedBookService = issuedBookService;
         }
 
         [HttpGet("search")]
@@ -31,28 +34,78 @@ namespace BookLibraryAPI.Controllers
 
             if (book != null)
             {
-                // Return the book details as JSON
                 return Ok(book);
             }
 
-            var pagedBooks = _bookService.GetPagedBooks(genre, author, bookName, pageNumber, pageSize);
+            var pagedBooks = await Task.Run(() => _bookService.GetPagedBooks(genre, author, bookName, pageNumber, pageSize));
 
             if (!pagedBooks.Items.Any())
             {
                 bool allIssued = _bookService.AreAllBooksIssued(bookName, author != null ? int.Parse(author) : 0);
                 string message = allIssued
                     ? $"All Books {bookName} by {pagedBooks.Items.FirstOrDefault()?.Author.Name} {pagedBooks.Items.FirstOrDefault()?.Author.Surname} were issued."
-                    : "No matched books found.";
+                    : "No matches found.";
                 return NotFound(new { Message = message });
             }
 
             return Ok(pagedBooks);
         }
 
+        [HttpPost("{bookId}/issue")]
+        public IActionResult IssueBook(int bookId, [FromBody] int userId)
+        {
+            var book = _bookService.GetById(bookId);
+            if (book.BookNumber > 0)
+            {
+                book.BookNumber--;
+                _bookService.Update(book);
+
+                var issuedBook = new IssuedBook
+                {
+                    BookId = bookId,
+                    UserId = userId,
+                    Issued = DateTime.UtcNow,
+                    Return = DateTime.UtcNow.AddDays(14)
+                };
+                _issuedBookService.Create(issuedBook);
+
+                return Ok(issuedBook);
+            }
+            else
+            {
+                throw new NoAvailableBooksException($"There are no copies of \"{book.Title}\" available.");
+            }
+        }
+
+        [HttpDelete("return/{issuedBookId}")]
+        public IActionResult ReturnBook(int issuedBookId)
+        {
+            var issuedBook = _issuedBookService.GetById(issuedBookId);
+            if (issuedBook == null)
+            {
+                return NotFound(new { Message = $"Issued book with ID {issuedBookId} not found." });
+            }
+
+            var book = _bookService.GetById(issuedBook.BookId);
+            book.BookNumber++;
+            _bookService.Update(book);
+
+            _issuedBookService.Delete(issuedBook);
+
+            return NoContent();
+        }
+
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
             var book = _bookService.GetById(id);
+            return Ok(book);
+        }
+
+        [HttpGet("author/{id}")]
+        public IActionResult GetByAuthor(int authorId)
+        {
+            var book = _bookService.GetByAuthor(authorId);
             return Ok(book);
         }
 
