@@ -1,0 +1,21 @@
+﻿@model List<BookLibraryClient.Controllers.BookDto>
+
+@{
+    ViewData["Title"] = "Books";
+}
+
+<h2>Books</h2>
+
+<div class="container">
+    @foreach (var book in Model)
+    {
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">@($"{book.Title} | {book.Author.Name} {book.Author.Surname}")</h5>
+                <p class="card-text">Genre: @book.Genre</p>
+                <p class="card-text">Available Copies: @book.BookNumber</p>
+                <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-info">Details</a>
+            </div>
+        </div>
+    }
+</div>
