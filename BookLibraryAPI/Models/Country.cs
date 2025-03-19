@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public string Name { get; set; } = null!;
-        public virtual ICollection<Country> Authors { get; set; } = new List<Country>();
+        public virtual ICollection<Author> Authors { get; set; } = new List<Author>();
         public override string ToString()
         {
             return $"{Name}";

@@ -1,4 +1,5 @@
 using BookLibraryAPI.Interfaces;
+using BookLibraryAPI.Middleware;
 using BookLibraryAPI.Models;
 using BookLibraryAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -13,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Настройка контекста базы данных
 builder.Services.AddDbContext<Db15460Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("LocalConnection")));
-builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Настройка Identity
 builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
@@ -109,6 +110,8 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var dbContext = scope.ServiceProvider.GetRequiredService<Db15460Context>();
+    DbInitializer.Initialize(dbContext);
     var services = scope.ServiceProvider;
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
     var userManager = services.GetRequiredService<UserManager<User>>();

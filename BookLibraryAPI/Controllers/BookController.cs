@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using BookLibraryAPI.Interfaces;
 using System.Runtime.CompilerServices;
 using BookLibraryAPI.Middleware;
+using BookLibraryAPI.Dtos.Books;
+using AutoMapper;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -15,11 +17,13 @@ namespace BookLibraryAPI.Controllers
     {
         private readonly IAllBooks _bookService;
         private readonly IAllIssuedBooks _issuedBookService;
+        private readonly IMapper _mapper;
 
-        public BooksController(IAllBooks bookService, IAllIssuedBooks issuedBookService)
+        public BooksController(IAllBooks bookService, IAllIssuedBooks issuedBookService, IMapper mapper)
         {
             _bookService = bookService;
             _issuedBookService = issuedBookService;
+            _mapper = mapper;
         }
 
         [HttpGet("search")]
@@ -34,7 +38,9 @@ namespace BookLibraryAPI.Controllers
 
             if (book != null)
             {
-                return Ok(book);
+                var bookDto = _mapper.Map<List<BookDto>>(book);
+
+                return Ok(bookDto);
             }
 
             var pagedBooks = await Task.Run(() => _bookService.GetPagedBooks(genre, author, bookName, pageNumber, pageSize));
@@ -48,7 +54,14 @@ namespace BookLibraryAPI.Controllers
                 return NotFound(new { Message = message });
             }
 
-            return Ok(pagedBooks);
+            var bookDtos = _mapper.Map<List<BookDto>>(pagedBooks.Items);
+            var pagedBooksDto = new PagedBooksDto
+            {
+                Items = bookDtos,
+                TotalCount = pagedBooks.TotalCount
+            };
+
+            return Ok(pagedBooksDto);
         }
 
         [HttpPost("{bookId}/issue")]

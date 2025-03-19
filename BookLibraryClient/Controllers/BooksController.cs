@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace BookLibraryClient.Controllers
@@ -22,9 +22,9 @@ namespace BookLibraryClient.Controllers
             response.EnsureSuccessStatusCode();
 
             var jsonResponse = await response.Content.ReadAsStringAsync();
-            var books = JsonSerializer.Deserialize<List<BookDto>>(jsonResponse);
+            var pagedBooks = JsonConvert.DeserializeObject<PagedBooksDto>(jsonResponse);
 
-            return View(books);
+            return View(pagedBooks == null ? new List<BookDto>() : pagedBooks.Items);
         }
 
         public IActionResult Details(int id)
@@ -32,6 +32,12 @@ namespace BookLibraryClient.Controllers
             // Logic to fetch and display book details
             return View();
         }
+    }
+
+    public class PagedBooksDto
+    {
+        public List<BookDto> Items { get; set; }
+        public int TotalCount { get; set; }
     }
 
     public class BookDto
