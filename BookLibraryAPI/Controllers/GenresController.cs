@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
+using BookLibraryAPI.DTOs.Genres;
+using AutoMapper;
+using System.Collections.Generic;
 using BookLibraryAPI.Services;
 
 namespace BookLibraryAPI.Controllers
@@ -11,43 +14,58 @@ namespace BookLibraryAPI.Controllers
     public class GenreController : ControllerBase
     {
         private readonly IAllGenres _genreService;
+        private readonly IMapper _mapper;
 
-        public GenreController(IAllGenres genreService)
+        public GenreController(IAllGenres genreService, IMapper mapper)
         {
             _genreService = genreService;
+            _mapper = mapper;
         }
 
         [HttpGet]
         public IActionResult GetAllGenres()
         {
             var genres = _genreService.AllGenres;
-            return Ok(genres);
+            var genreDtos = _mapper.Map<List<GenreDto>>(genres);
+            return Ok(genreDtos);
         }
 
         [HttpGet("{id}")]
         public IActionResult GetGenreById(int id)
         {
             var genre = _genreService.GetById(id);
-            return Ok(genre);
+            if (genre == null)
+            {
+                return NotFound();
+            }
+            var genreDto = _mapper.Map<GenreDto>(genre);
+            return Ok(genreDto);
         }
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost]
-        public IActionResult CreateGenre([FromBody] Genre genre)
+        public IActionResult CreateGenre([FromBody] GenreDto genreDto)
         {
+            if (genreDto == null)
+            {
+                return BadRequest("Genre cannot be null.");
+            }
+
+            var genre = _mapper.Map<Genre>(genreDto);
             _genreService.Create(genre);
-            return CreatedAtAction(nameof(GetGenreById), new { id = genre.Id }, genre);
+            return CreatedAtAction(nameof(GetGenreById), new { id = genre.Id }, genreDto);
         }
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPut("{id}")]
-        public IActionResult UpdateGenre(int id, [FromBody] Genre genre)
+        public IActionResult UpdateGenre(int id, [FromBody] GenreDto genreDto)
         {
-            if (id != genre.Id)
+            if (genreDto == null || genreDto.Id != id)
             {
-                return BadRequest("ID из URL не соответствует ID жанра.");
+                return BadRequest("Genre data is invalid.");
             }
 
+            var genre = _mapper.Map<Genre>(genreDto);
             _genreService.Update(genre);
             return NoContent();
         }
@@ -57,6 +75,11 @@ namespace BookLibraryAPI.Controllers
         public IActionResult DeleteGenre(int id)
         {
             var genre = _genreService.GetById(id);
+            if (genre == null)
+            {
+                return NotFound();
+            }
+
             _genreService.Delete(genre);
             return NoContent();
         }

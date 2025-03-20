@@ -68,7 +68,7 @@ namespace BookLibraryAPI.Services
         {
             var book = _context.Books.FirstOrDefault(b => b.Id == bookId);
 
-            if (book.BookNumber != 0)
+            if (book.BookNumber > 0)
             {
                 book.BookNumber--;
                 _context.SaveChanges();

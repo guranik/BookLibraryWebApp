@@ -1,4 +1,5 @@
 ﻿using BookLibraryAPI.Models;
+using BookLibraryAPI.ViewModels;
 
 namespace BookLibraryAPI.Interfaces
 {
@@ -6,6 +7,7 @@ namespace BookLibraryAPI.Interfaces
     {
         public IEnumerable<Author> AllAuthors { get; }
         public IEnumerable<Author> SortedAuthors { get; }
+        public PagedList<Author> GetPagedAuthors(int page, int pageSize); 
         public Author GetById(int id);
         public void Update(Author author);
         public void Delete(Author author);

@@ -9,6 +9,8 @@ namespace BookLibraryAPI.Interfaces
         public PagedList<Book> GetPagedBooks(string genre, string author, string bookName, int pageNumber, int pageSize);
         public Book GetById(int id);
         public Book GetByISBN(string name);
+        public void IssueBook(int bookId);
+        public void ReturnBook(int bookId);
         public IEnumerable<Book> GetByAuthor(int authorId);
         public void Update(Book book);
         public void Delete(Book book);

@@ -16,6 +16,16 @@ namespace BookLibraryAPI.Services
             _context = context;
         }
 
+        public PagedList<IssuedBook> GetPagedIssuedBooks(int page, int pageSize)
+        {
+            IQueryable<IssuedBook> issuedBooks = _context.IssuedBooks.Include(b => b.Book).Include(b => b.User);
+
+            var totalCount = issuedBooks.Count();
+            var items = issuedBooks.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            return new PagedList<IssuedBook>(items, totalCount, page, pageSize);
+        }
+
         public PagedList<IssuedBook> GetByUser(int userId, int pageNumber, int pageSize)
         {
             var query = _context.IssuedBooks.Include(ib => ib.Book).Include(ib => ib.User)

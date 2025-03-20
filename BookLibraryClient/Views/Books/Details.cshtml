@@ -1,0 +1,14 @@
+﻿@model BookLibraryClient.DTOs.Books.BookInfoDto;
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<h2>@Model.Title</h2>
+<p><strong>Author:</strong> @($"{Model.Author.Name} {Model.Author.Surname}")</p>
+<p><strong>Description:</strong> @Model.Description</p>
+<p><strong>Genre:</strong> @Model.Genre.Name</p>
+<p><strong>Available Copies:</strong> @Model.BookNumber</p>
+<p><strong>ISBN:</strong> @Model.ISBN</p>
+
+<a href="@Url.Action("Index", "Books")" class="btn btn-primary">Back to Books</a>

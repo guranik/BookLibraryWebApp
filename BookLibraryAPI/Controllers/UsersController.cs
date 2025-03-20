@@ -11,6 +11,7 @@ using BookLibraryAPI.Services;
 using AutoMapper;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using BookLibraryAPI.Interfaces;
+using BookLibraryAPI.DTOs.Users;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -34,7 +35,7 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterUserDto registerUserDto)
+        public async Task<IActionResult> Register([FromBody] RegisterModel registerUserDto)
         {
             var user = _mapper.Map<User>(registerUserDto);
             var result = await _userManager.CreateAsync(user, registerUserDto.Password);
@@ -149,25 +150,11 @@ namespace BookLibraryAPI.Controllers
         public required string Password { get; set; }
 
     }
-    public class UserDto
-    {
-        public required string Username { get; set; }
-        public required string Password { get; set; }
-    }
 
-    public class RegisterUserDto
+    public class RegisterModel
     {
         public required string Login { get; set; }
         public required string Password { get; set; }
         public required string Role { get; set; }
-    }
-    public class MappingProfile : Profile
-    {
-        public MappingProfile()
-        {
-            CreateMap<User, UserDto>();
-            CreateMap<RegisterUserDto, User>()
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Login));
-        }
     }
 }

@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using BookLibraryAPI.Models;
-using BookLibraryAPI.Services;
-using System.Threading.Tasks;
 using BookLibraryAPI.Interfaces;
-using System.Runtime.CompilerServices;
-using BookLibraryAPI.Middleware;
-using BookLibraryAPI.Dtos.Books;
+using BookLibraryAPI.Models;
+using BookLibraryAPI.DTOs.Books;
+using BookLibraryAPI.DTOs.PagedResult;
 using AutoMapper;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -38,8 +38,7 @@ namespace BookLibraryAPI.Controllers
 
             if (book != null)
             {
-                var bookDto = _mapper.Map<List<BookDto>>(book);
-
+                var bookDto = _mapper.Map<BookDto>(book);
                 return Ok(bookDto);
             }
 
@@ -47,7 +46,7 @@ namespace BookLibraryAPI.Controllers
 
             if (!pagedBooks.Items.Any())
             {
-                bool allIssued = _bookService.AreAllBooksIssued(bookName, author != null ? int.Parse(author) : 0);
+                bool allIssued = _bookService.AreAllBooksIssued(bookName, int.TryParse(author, out var authorId) ? authorId : 0);
                 string message = allIssued
                     ? $"All Books {bookName} by {pagedBooks.Items.FirstOrDefault()?.Author.Name} {pagedBooks.Items.FirstOrDefault()?.Author.Surname} were issued."
                     : "No matches found.";
@@ -58,7 +57,8 @@ namespace BookLibraryAPI.Controllers
             var pagedBooksDto = new PagedBooksDto
             {
                 Items = bookDtos,
-                TotalCount = pagedBooks.TotalCount
+                TotalPages = pagedBooks.TotalPages,
+                CurrentPage = pagedBooks.PageNumber
             };
 
             return Ok(pagedBooksDto);
@@ -67,27 +67,20 @@ namespace BookLibraryAPI.Controllers
         [HttpPost("{bookId}/issue")]
         public IActionResult IssueBook(int bookId, [FromBody] int userId)
         {
+            _bookService.IssueBook(bookId);
+            var issuedBook = new IssuedBook
+            {
+                BookId = bookId,
+                UserId = userId,
+                Issued = DateTime.UtcNow,
+                Return = DateTime.UtcNow.AddDays(14)
+            };
+            _issuedBookService.Create(issuedBook);
+
             var book = _bookService.GetById(bookId);
-            if (book.BookNumber > 0)
-            {
-                book.BookNumber--;
-                _bookService.Update(book);
+            var bookDto = _mapper.Map<BookDto>(book);
 
-                var issuedBook = new IssuedBook
-                {
-                    BookId = bookId,
-                    UserId = userId,
-                    Issued = DateTime.UtcNow,
-                    Return = DateTime.UtcNow.AddDays(14)
-                };
-                _issuedBookService.Create(issuedBook);
-
-                return Ok(issuedBook);
-            }
-            else
-            {
-                throw new NoAvailableBooksException($"There are no copies of \"{book.Title}\" available.");
-            }
+            return Ok(bookDto);
         }
 
         [HttpDelete("return/{issuedBookId}")]
@@ -96,13 +89,10 @@ namespace BookLibraryAPI.Controllers
             var issuedBook = _issuedBookService.GetById(issuedBookId);
             if (issuedBook == null)
             {
-                return NotFound(new { Message = $"Issued book with ID {issuedBookId} not found." });
+                return NotFound();
             }
 
-            var book = _bookService.GetById(issuedBook.BookId);
-            book.BookNumber++;
-            _bookService.Update(book);
-
+            _bookService.ReturnBook(issuedBookId);
             _issuedBookService.Delete(issuedBook);
 
             return NoContent();
@@ -112,33 +102,47 @@ namespace BookLibraryAPI.Controllers
         public IActionResult GetById(int id)
         {
             var book = _bookService.GetById(id);
-            return Ok(book);
+            if (book == null)
+            {
+                return NotFound();
+            }
+
+            var bookDto = _mapper.Map<BookInfoDto>(book);
+            return Ok(bookDto);
         }
 
-        [HttpGet("author/{id}")]
+        [HttpGet("author/{authorId}")]
         public IActionResult GetByAuthor(int authorId)
         {
-            var book = _bookService.GetByAuthor(authorId);
-            return Ok(book);
+            var books = _bookService.GetByAuthor(authorId);
+            var bookDtos = _mapper.Map<List<BookDto>>(books);
+            return Ok(bookDtos);
         }
 
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Create([FromBody] Book book)
+        public IActionResult Create([FromBody] BookDto bookDto)
         {
+            if (bookDto == null)
+            {
+                return BadRequest("Book cannot be null.");
+            }
+
+            var book = _mapper.Map<Book>(bookDto);
             _bookService.Create(book);
-            return CreatedAtAction(nameof(GetById), new { id = book.Id }, book);
+            return CreatedAtAction(nameof(GetById), new { id = book.Id }, bookDto);
         }
 
         [HttpPut("{id}")]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Update(int id, [FromBody] Book book)
+        public IActionResult Update(int id, [FromBody] BookDto bookDto)
         {
-            if (id != book.Id)
+            if (bookDto == null || bookDto.Id != id)
             {
                 return BadRequest("Book ID mismatch.");
             }
 
+            var book = _mapper.Map<Book>(bookDto);
             _bookService.Update(book);
             return NoContent();
         }
@@ -148,6 +152,11 @@ namespace BookLibraryAPI.Controllers
         public IActionResult Delete(int id)
         {
             var book = _bookService.GetById(id);
+            if (book == null)
+            {
+                return NotFound();
+            }
+
             _bookService.Delete(book);
             return NoContent();
         }

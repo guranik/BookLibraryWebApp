@@ -2,7 +2,9 @@
 using System.Linq;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
+using BookLibraryAPI.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BookLibraryAPI.Services
 {
@@ -22,6 +24,16 @@ namespace BookLibraryAPI.Services
             .OrderBy(a => a.Surname)
             .ThenBy(a => a.Name)
             .ThenBy(a => a.BirthDate);
+
+        public PagedList<Author> GetPagedAuthors(int page, int pageSize)
+        {
+            IQueryable<Author> authors = _context.Authors.Include(a => a.Country);
+
+            var totalCount = authors.Count();
+            var items = authors.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            return new PagedList<Author>(items, totalCount, page, pageSize);
+        }
 
         public Author GetById(int id)
         {

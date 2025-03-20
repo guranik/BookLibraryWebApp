@@ -2,71 +2,69 @@
 using Microsoft.AspNetCore.Mvc;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
+using BookLibraryAPI.DTOs.Countries; // Assume you have a DTO for Country
+using AutoMapper;
 using System.Collections.Generic;
 
 namespace BookLibraryAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
-    [Produces("application/json")]
+    [Route("api/[controller]")]
     public class CountriesController : ControllerBase
     {
         private readonly IAllCountries _countryService;
+        private readonly IMapper _mapper;
 
-        public CountriesController(IAllCountries countryService)
+        public CountriesController(IAllCountries countryService, IMapper mapper)
         {
             _countryService = countryService;
+            _mapper = mapper;
         }
 
-        // GET: api/countries
         [HttpGet]
-        public ActionResult<IEnumerable<Country>> GetAllCountries()
+        public ActionResult<IEnumerable<CountryDto>> GetAllCountries()
         {
             var countries = _countryService.AllCountries;
-            return Ok(countries);
+            var countryDtos = _mapper.Map<List<CountryDto>>(countries);
+            return Ok(countryDtos);
         }
 
-        // GET: api/countries/{id}
         [HttpGet("{id}", Name = "GetCountryById")]
-        public ActionResult<Country> GetCountryById(int id)
+        public ActionResult<CountryDto> GetCountryById(int id)
         {
-            try
-            {
-                var country = _countryService.GetById(id);
-                return Ok(country);
-            }
-            catch (InvalidOperationException)
+            var country = _countryService.GetById(id);
+            if (country == null)
             {
                 return NotFound();
             }
+            var countryDto = _mapper.Map<CountryDto>(country);
+            return Ok(countryDto);
         }
 
-        // POST: api/countries
-        [Authorize]
         [Authorize(Policy = "AdminOnly")]
         [HttpPost]
-        public ActionResult<Country> CreateCountry([FromBody] Country country)
+        public ActionResult<CountryDto> CreateCountry([FromBody] CountryDto countryDto)
         {
-            if (country == null)
+            if (countryDto == null)
             {
                 return BadRequest("Country cannot be null.");
             }
 
+            var country = _mapper.Map<Country>(countryDto);
             _countryService.Create(country);
-            return CreatedAtRoute("GetCountryById", new { id = country.Id }, country);
+            return CreatedAtRoute("GetCountryById", new { id = country.Id }, countryDto);
         }
 
-        // PUT: api/countries/{id}
-        [Authorize]
         [Authorize(Policy = "AdminOnly")]
         [HttpPut("{id}")]
-        public IActionResult UpdateCountry(int id, [FromBody] Country country)
+        public IActionResult UpdateCountry(int id, [FromBody] CountryDto countryDto)
         {
-            if (country == null || country.Id != id)
+            if (countryDto == null || countryDto.Id != id)
             {
                 return BadRequest("Country data is invalid.");
             }
 
+            var country = _mapper.Map<Country>(countryDto);
             try
             {
                 _countryService.Update(country);
@@ -78,8 +76,6 @@ namespace BookLibraryAPI.Controllers
             }
         }
 
-        // DELETE: api/countries/{id}
-        [Authorize]
         [Authorize(Policy = "AdminOnly")]
         [HttpDelete("{id}")]
         public IActionResult DeleteCountry(int id)

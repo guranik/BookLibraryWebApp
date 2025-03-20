@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using BookLibraryClient.DTOs.PagedResults;
+using BookLibraryClient.DTOs.Books;
 
 namespace BookLibraryClient.Controllers
 {
@@ -27,31 +29,20 @@ namespace BookLibraryClient.Controllers
             return View(pagedBooks == null ? new List<BookDto>() : pagedBooks.Items);
         }
 
-        public IActionResult Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
-            // Logic to fetch and display book details
-            return View();
+            var client = _httpClientFactory.CreateClient("BookLibraryAPI");
+            var response = await client.GetAsync($"books/{id}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return NotFound();
+            }
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var bookDetails = JsonConvert.DeserializeObject<BookInfoDto>(jsonResponse);
+
+            return View(bookDetails);
         }
-    }
-
-    public class PagedBooksDto
-    {
-        public List<BookDto> Items { get; set; }
-        public int TotalCount { get; set; }
-    }
-
-    public class BookDto
-    {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public AuthorDto Author { get; set; }
-        public string Genre { get; set; }
-        public int BookNumber { get; set; }
-    }
-
-    public class AuthorDto
-    {
-        public string Name { get; set; }
-        public string Surname { get; set; }
     }
 }
