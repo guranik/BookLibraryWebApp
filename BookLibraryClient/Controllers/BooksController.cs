@@ -26,7 +26,7 @@ namespace BookLibraryClient.Controllers
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var pagedBooks = JsonConvert.DeserializeObject<PagedBooksDto>(jsonResponse);
 
-            return View(pagedBooks == null ? new List<BookDto>() : pagedBooks.Items);
+            return View(books);
         }
 
         public async Task<IActionResult> Details(int id)
