@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
-using BookLibraryAPI.DTOs.Countries; // Assume you have a DTO for Country
+using BookLibraryAPI.DTOs.Countries;
 using AutoMapper;
 using System.Collections.Generic;
 
@@ -21,7 +21,7 @@ namespace BookLibraryAPI.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet]
+        [HttpGet("all")]
         public ActionResult<IEnumerable<CountryDto>> GetAllCountries()
         {
             var countries = _countryService.AllCountries;
@@ -29,7 +29,7 @@ namespace BookLibraryAPI.Controllers
             return Ok(countryDtos);
         }
 
-        [HttpGet("{id}", Name = "GetCountryById")]
+        [HttpGet("{id}")]
         public ActionResult<CountryDto> GetCountryById(int id)
         {
             var country = _countryService.GetById(id);

@@ -1,0 +1,11 @@
+﻿@model BookLibraryClient.DTOs.Authors.AuthorInfoDto
+
+@{
+    ViewData["Title"] = $"{Model.Name} {Model.Surname}";
+}
+
+<h2>@($"{Model.Name} {Model.Surname}")</h2>
+<p><strong>Birth Date:</strong> @Model.BirthDate.ToShortDateString()</p>
+<p><strong>Country:</strong> @Model.Country.Name</p>
+
+<a href="@Url.Action("Index", "Authors")" class="btn btn-primary">Back to Authors</a>

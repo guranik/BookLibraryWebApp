@@ -12,6 +12,10 @@ namespace BookLibraryAPI.Middleware
         {
             context.Database.EnsureCreated();
 
+            if(context.Books.Any())
+            {
+                return;
+            }
 
             // Инициализация стран
             var countries = new List<Country>

@@ -11,12 +11,10 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Настройка контекста базы данных
 builder.Services.AddDbContext<Db15460Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("LocalConnection")));
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// Настройка Identity
 builder.Services.AddIdentity<User, IdentityRole<int>>(options =>
 {
     options.User.RequireUniqueEmail = false;
@@ -37,14 +35,12 @@ builder.Services.AddLogging(config =>
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy =>
-        policy.RequireRole("Admin")); // or any other requirement
+        policy.RequireRole("Admin"));
 });
-// Настройка необходимых сервисов
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Настройка JWT аутентификации
 var key = builder.Configuration["Jwt:Key"] ?? throw new ArgumentNullException("JWT Key cannot be null");
 var issuer = builder.Configuration["Jwt:Issuer"] ?? throw new ArgumentNullException("JWT Issuer cannot be null");
 
@@ -116,20 +112,17 @@ using (var scope = app.Services.CreateScope())
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
     var userManager = services.GetRequiredService<UserManager<User>>();
 
-    // Создание ролей, если они не существуют
     string[] roleNames = { "Admin", "User " };
     foreach (var roleName in roleNames)
     {
         var roleExist = await roleManager.RoleExistsAsync(roleName);
         if (!roleExist)
         {
-            // Создание роли
             await roleManager.CreateAsync(new IdentityRole<int>(roleName));
         }
     }
 }
 
-// Настройка HTTP пайплайна
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

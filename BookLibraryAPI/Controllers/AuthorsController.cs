@@ -11,12 +11,12 @@ namespace BookLibraryAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthorController : ControllerBase
+    public class AuthorsController : ControllerBase
     {
         private readonly IAllAuthors _authorService;
         private readonly IMapper _mapper;
 
-        public AuthorController(IAllAuthors authorService, IMapper mapper)
+        public AuthorsController(IAllAuthors authorService, IMapper mapper)
         {
             _authorService = authorService;
             _mapper = mapper;

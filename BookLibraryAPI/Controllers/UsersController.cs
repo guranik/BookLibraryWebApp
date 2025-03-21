@@ -65,7 +65,7 @@ namespace BookLibraryAPI.Controllers
             if (user != null && await _userManager.CheckPasswordAsync(user, loginModel.Password))
             {
                 var token = GenerateJwtToken(user);
-                var refreshToken = await _refreshTokenService.CreateRefreshTokenAsync(user.Id);
+                var refreshToken = _refreshTokenService.CreateRefreshTokenAsync(user.Id);
 
                 return Ok(new { Token = token, RefreshToken = refreshToken.Token });
             }
@@ -91,7 +91,7 @@ namespace BookLibraryAPI.Controllers
             var newToken = GenerateJwtToken(user);
 
             await _refreshTokenService.RevokeRefreshTokenAsync(storedToken);
-            var newRefreshToken = await _refreshTokenService.CreateRefreshTokenAsync(user.Id);
+            var newRefreshToken = _refreshTokenService.CreateRefreshTokenAsync(user.Id);
 
             return Ok(new { Token = newToken, RefreshToken = newRefreshToken.Token });
         }

@@ -15,7 +15,7 @@ namespace BookLibraryAPI.Services
             _context = context;
         }
 
-        public async Task<RefreshToken> CreateRefreshTokenAsync(int userId)
+        public RefreshToken CreateRefreshTokenAsync(int userId)
         {
             var refreshToken = new RefreshToken
             {
@@ -24,8 +24,8 @@ namespace BookLibraryAPI.Services
                 ExpiryDate = DateTime.UtcNow.AddDays(30)
             };
 
-            await _context.RefreshTokens.AddAsync(refreshToken);
-            await _context.SaveChangesAsync();
+            _context.RefreshTokens.AddAsync(refreshToken);
+            _context.SaveChangesAsync();
 
             return refreshToken;
         }

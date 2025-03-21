@@ -8,6 +8,7 @@ using AutoMapper;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BookLibraryAPI.Services;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -16,12 +17,16 @@ namespace BookLibraryAPI.Controllers
     public class BooksController : ControllerBase
     {
         private readonly IAllBooks _bookService;
+        private readonly IAllAuthors _authorService;
+        private readonly IAllGenres _genresService;
         private readonly IAllIssuedBooks _issuedBookService;
         private readonly IMapper _mapper;
 
-        public BooksController(IAllBooks bookService, IAllIssuedBooks issuedBookService, IMapper mapper)
+        public BooksController(IAllBooks bookService, IAllAuthors authorService, IAllGenres genresService, IAllIssuedBooks issuedBookService, IMapper mapper)
         {
             _bookService = bookService;
+            _genresService = genresService;
+            _authorService = authorService;
             _issuedBookService = issuedBookService;
             _mapper = mapper;
         }
@@ -60,7 +65,6 @@ namespace BookLibraryAPI.Controllers
                 TotalPages = pagedBooks.TotalPages,
                 CurrentPage = pagedBooks.PageNumber
             };
-
             return Ok(pagedBooksDto);
         }
 
@@ -121,7 +125,7 @@ namespace BookLibraryAPI.Controllers
 
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Create([FromBody] BookDto bookDto)
+        public IActionResult Create([FromBody] BookInfoDto bookDto)
         {
             if (bookDto == null)
             {
@@ -129,20 +133,23 @@ namespace BookLibraryAPI.Controllers
             }
 
             var book = _mapper.Map<Book>(bookDto);
+            book.Author = _authorService.GetById(bookDto.AuthorId);
+            book.Genre = _genresService.GetById(bookDto.GenreId);
             _bookService.Create(book);
             return CreatedAtAction(nameof(GetById), new { id = book.Id }, bookDto);
         }
 
         [HttpPut("{id}")]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Update(int id, [FromBody] BookDto bookDto)
+        public IActionResult Update(int id, [FromBody] BookInfoDto bookDto)
         {
             if (bookDto == null || bookDto.Id != id)
             {
                 return BadRequest("Book ID mismatch.");
             }
+            var book = _bookService.GetById(bookDto.Id);
 
-            var book = _mapper.Map<Book>(bookDto);
+            book = _mapper.Map<Book>(bookDto);
             _bookService.Update(book);
             return NoContent();
         }

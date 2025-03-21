@@ -1,4 +1,6 @@
-﻿namespace BookLibraryAPI.DTOs.Authors
+﻿using BookLibraryAPI.DTOs.Countries;
+
+namespace BookLibraryAPI.DTOs.Authors
 {
     public class AuthorInfoDto
     {
@@ -6,6 +8,7 @@
         public string Name { get; set; } = null!;
         public string Surname { get; set; } = null!;
         public DateTime BirthDate { get; set; }
-        public string CountryName { get; set; } = null!;
+        public int CountryId { get; set; }
+        public CountryDto? Country { get; set; }
     }
 }

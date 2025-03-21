@@ -9,13 +9,27 @@
 <div class="container">
     @foreach (var book in Model)
     {
-        <div class="card">
+        <div class="card mb-3">
             <div class="card-body">
-                <h5 class="card-title">@($"{book.Title} | {book.Author.Name} {book.Author.Surname}")</h5>
+                <h5 class="card-title">@($"{book.Title} | {book.AuthorName}")</h5>
                 <p class="card-text">Genre: @book.Genre</p>
                 <p class="card-text">Available Copies: @book.BookNumber</p>
                 <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-info">Details</a>
+
+                @if (User.IsInRole("Admin")) // Check if the user is in the Admin role
+                {
+                    <a asp-action="Edit" asp-route-id="@book.Id" class="btn btn-warning">Edit</a>
+                    <button class="btn btn-danger" onclick="confirmDelete(@book.Id)">Delete</button>
+                }
             </div>
         </div>
     }
 </div>
+
+<script>
+    function confirmDelete(bookId) {
+        if (confirm("Are you sure you want to delete this book?")) {
+            window.location.href = '@Url.Action("Delete", "Books")/' + bookId;
+        }
+    }
+</script>

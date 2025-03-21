@@ -1,0 +1,46 @@
+﻿@model BookLibraryClient.ViewModels.BookViewModel
+
+<div>
+    <h1>@(Model.Id > 0 ? "Edit Book" : "Create Book")</h1>
+    <form asp-action="@(Model.Id > 0 ? "Edit" : "Create")">
+        <input type="hidden" asp-for="Id" />
+
+        <div class="form-group">
+            <label asp-for="Title"></label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description" class="form-control"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="SelectedAuthorId">Author</label>
+            <select asp-for="SelectedAuthorId" class="form-control" asp-items="@(new SelectList(Model.Authors, "Id", "Name"))">
+                <option value="">Select Author</option>
+            </select>
+            <span asp-validation-for="SelectedAuthorId" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="SelectedGenreId">Genre</label>
+            <select asp-for="SelectedGenreId" class="form-control" asp-items="@(new SelectList(Model.Genres, "Id", "Name"))">
+                <option value="">Select Genre</option>
+            </select>
+            <span asp-validation-for="SelectedGenreId" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="BookNumber"></label>
+            <input asp-for="BookNumber" class="form-control" type="number" />
+            <span asp-validation-for="BookNumber" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="ISBN"></label>
+            <input asp-for="ISBN" class="form-control" />
+            <span asp-validation-for="ISBN" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="@Url.Action("Index", "Books")" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

@@ -11,18 +11,18 @@ namespace BookLibraryAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GenreController : ControllerBase
+    public class GenresController : ControllerBase
     {
         private readonly IAllGenres _genreService;
         private readonly IMapper _mapper;
 
-        public GenreController(IAllGenres genreService, IMapper mapper)
+        public GenresController(IAllGenres genreService, IMapper mapper)
         {
             _genreService = genreService;
             _mapper = mapper;
         }
 
-        [HttpGet]
+        [HttpGet("all")]
         public IActionResult GetAllGenres()
         {
             var genres = _genreService.AllGenres;

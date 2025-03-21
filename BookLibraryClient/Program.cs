@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,14 @@ builder.Services.AddHttpClient("BookLibraryAPI", client =>
     client.BaseAddress = new Uri("https://localhost:7212/api/");
 });
 builder.Services.AddRazorPages();
+
+// Add authentication services
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Auth/Login"; // Set your login path
+        options.LogoutPath = "/Auth/Logout"; // Set your logout path
+    });
 
 var app = builder.Build();
 
@@ -28,6 +37,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// Use authentication and authorization middleware
+app.UseAuthentication(); // This must be before UseAuthorization
 app.UseAuthorization();
 
 app.MapControllerRoute(

@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace BookLibraryClient.Controllers
 {
@@ -45,11 +48,53 @@ namespace BookLibraryClient.Controllers
 
             if (response.IsSuccessStatusCode)
             {
-                return RedirectToAction("Index", "Books");
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(jsonResponse);
+
+                if (tokenResponse != null && !string.IsNullOrEmpty(tokenResponse.token.result))
+                {
+                    Response.Cookies.Append("jwt", tokenResponse.token.result, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict
+                    });
+
+                    var handler = new JwtSecurityTokenHandler();
+                    var jwtToken = handler.ReadJwtToken(tokenResponse.token.result);
+
+                    var username = jwtToken.Claims.First(claim => claim.Type == "sub").Value;
+                    var userId = jwtToken.Claims.First(claim => claim.Type == "jti").Value;
+                    var role = jwtToken.Claims.First(claim => claim.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").Value; 
+
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, username),
+                        new Claim("UserId", userId),
+                        new Claim(ClaimTypes.Role, role)
+                    };
+
+                    var claimsIdentity = new ClaimsIdentity(claims, "Login");
+                    var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+                    await HttpContext.SignInAsync(claimsPrincipal);
+
+                    return RedirectToAction("Index", "Books");
+                }
             }
 
             ModelState.AddModelError("", "Login failed.");
             return View("Index");
+        }
+
+        public class TokenResponse
+        {
+            public Token token { get; set; }
+            public string refreshToken { get; set; }
+        }
+
+        public class Token
+        {
+            public string result { get; set; }
         }
     }
 
