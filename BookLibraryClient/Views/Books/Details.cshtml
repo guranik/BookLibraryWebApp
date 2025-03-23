@@ -1,4 +1,5 @@
-﻿@model BookLibraryClient.DTOs.Books.BookInfoDto;
+﻿@using System.Security.Claims;
+@model BookLibraryClient.DTOs.Books.BookInfoDto;
 
 @{
     ViewData["Title"] = Model.Title;
@@ -10,5 +11,12 @@
 <p><strong>Genre:</strong> @Model.Genre.Name</p>
 <p><strong>Available Copies:</strong> @Model.BookNumber</p>
 <p><strong>ISBN:</strong> @Model.ISBN</p>
+
+@if (User.IsInRole("User") && Model.BookNumber > 0)
+{
+    <form asp-action="IssueBook" asp-route-bookId="@Model.Id" method="post">
+        <button type="submit" class="btn btn-success">Взять</button>
+    </form>
+}
 
 <a href="@Url.Action("Index", "Books")" class="btn btn-primary">Back to Books</a>

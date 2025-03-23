@@ -1,4 +1,4 @@
-﻿@model List<BookLibraryClient.DTOs.Books.BookDto>
+﻿@model BookLibraryClient.ViewModels.BookSearchViewModel
 
 @{
     ViewData["Title"] = "Books";
@@ -7,29 +7,61 @@
 <h2>Books</h2>
 
 <div class="container">
-    @foreach (var book in Model)
-    {
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">@($"{book.Title} | {book.AuthorName}")</h5>
-                <p class="card-text">Genre: @book.Genre</p>
-                <p class="card-text">Available Copies: @book.BookNumber</p>
-                <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-info">Details</a>
-
-                @if (User.IsInRole("Admin")) // Check if the user is in the Admin role
-                {
-                    <a asp-action="Edit" asp-route-id="@book.Id" class="btn btn-warning">Edit</a>
-                    <button class="btn btn-danger" onclick="confirmDelete(@book.Id)">Delete</button>
-                }
+    <form method="get" asp-action="Index">
+        <div class="row mb-3">
+            <div class="col">
+                <select name="genre" class="form-select">
+                    <option value="">Select Genre</option>
+                    @foreach (var genre in Model.Genres)
+                    {
+                        <option value="@genre" selected="@(Model.SelectedGenre == genre.Id.ToString() ? "selected" : null)">@genre.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col">
+                <select name="author" class="form-select">
+                    <option value="">Select Author</option>
+                    @foreach (var author in Model.Authors)
+                    {
+                        <option value="@author" selected="@(Model.SelectedAuthor == author.Id.ToString() ? "selected" : null)">@author.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col">
+                <input type="text" name="bookName" class="form-control" placeholder="Название книги, ISBN" value="@Model.BookName" />
+            </div>
+            <div class="col">
+                <button type="submit" class="btn btn-primary">Найти</button>
             </div>
         </div>
-    }
-</div>
+    </form>
 
-<script>
-    function confirmDelete(bookId) {
-        if (confirm("Are you sure you want to delete this book?")) {
-            window.location.href = '@Url.Action("Delete", "Books")/' + bookId;
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-light text-center" style="background-color: #f8f9fa;">
+            <strong>@Model.ErrorMessage</strong>
+        </div>
+    }
+    else
+    {
+        foreach (var book in Model.Books)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">@($"{book.Title} | {book.AuthorName}")</h5>
+                    <p class="card-text">Genre: @book.Genre</p>
+                    <p class="card-text">Available Copies: @book.BookNumber</p>
+                    <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-info">Details</a>
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a asp-action="Edit" asp-route-id="@book.Id" class="btn btn-warning">Edit</a>
+                        <form asp-action="Delete" asp-route-id="@book.Id" method="post" class="d-inline" style="margin-left: 2px;">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите удалить эту книгу?');">Удалить</button>
+                        </form>
+                    }
+                </div>
+            </div>
         }
     }
-</script>
+</div>

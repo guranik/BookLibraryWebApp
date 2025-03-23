@@ -101,7 +101,6 @@ builder.Services.AddScoped<IAllGenres,GenreService>();
 builder.Services.AddScoped<IAllAuthors,AuthorService>();
 builder.Services.AddScoped<IAllIssuedBooks,IssuedBookService>();
 
-
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -112,7 +111,7 @@ using (var scope = app.Services.CreateScope())
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
     var userManager = services.GetRequiredService<UserManager<User>>();
 
-    string[] roleNames = { "Admin", "User " };
+    string[] roleNames = { "Admin", "User" };
     foreach (var roleName in roleNames)
     {
         var roleExist = await roleManager.RoleExistsAsync(roleName);
@@ -128,6 +127,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseMiddleware<AuthorizationLoggingMiddleware>();

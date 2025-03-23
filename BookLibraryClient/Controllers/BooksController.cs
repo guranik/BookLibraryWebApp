@@ -9,6 +9,7 @@ using BookLibraryClient.DTOs.Authors;
 using BookLibraryClient.DTOs.Genres;
 using BookLibraryClient.DTOs.PagedResults;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace BookLibraryClient.Controllers
 {
@@ -21,15 +22,90 @@ namespace BookLibraryClient.Controllers
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string genre = "", string author = "", string bookName = "")
         {
             var client = await GetAuthorizedClientAsync();
-            var response = await client.GetAsync("books/search");
-            response.EnsureSuccessStatusCode();
+            var response = await client.GetAsync($"books/search?genre={genre}&author={author}&bookName={bookName}");
 
             var jsonResponse = await response.Content.ReadAsStringAsync();
-            var pagedBooks = JsonConvert.DeserializeObject<PagedBooksDto>(jsonResponse);
-            return View(pagedBooks == null? new List<BookDto>() : pagedBooks.Items);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var singleBook = JsonConvert.DeserializeObject<BookInfoDto>(jsonResponse);
+                if (singleBook != null && singleBook.Id > 0)
+                {
+                    return RedirectToAction("Details", new { id = singleBook.Id });
+                }
+
+                var pagedBooks = JsonConvert.DeserializeObject<PagedBooksDto>(jsonResponse);
+                var model = new BookSearchViewModel
+                {
+                    Books = pagedBooks?.Items ?? new List<BookDto>(),
+                    Authors = await GetAuthorsAsync(),
+                    Genres = await GetGenresAsync(),
+                    SelectedGenre = genre,
+                    SelectedAuthor = author,
+                    BookName = bookName,
+                    ErrorMessage = null
+                };
+
+                return View(model);
+            }
+            else
+            {
+                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonResponse);
+                var model = new BookSearchViewModel
+                {
+                    Books = new List<BookDto>(),
+                    Authors = await GetAuthorsAsync(),
+                    Genres = await GetGenresAsync(),
+                    SelectedGenre = genre,
+                    SelectedAuthor = author,
+                    BookName = bookName,
+                    ErrorMessage = errorResponse?.Message ?? "An unknown error occurred."
+                };
+
+                return View(model);
+            }
+        }
+
+        public class ErrorResponse
+        {
+            public string? Message { get; set; }
+        }
+
+        public async Task<IActionResult> Details(int id)
+        {
+            var client = await GetAuthorizedClientAsync();
+            var response = await client.GetAsync($"books/{id}");
+            if (!response.IsSuccessStatusCode) return NotFound();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var bookInfo = JsonConvert.DeserializeObject<BookInfoDto>(jsonResponse);
+
+            return View(bookInfo);
+        }
+
+        [Authorize(Roles = "User")]
+        public async Task<IActionResult> IssueBook(int bookId)
+        {
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+            var userId = userIdClaim?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest("Пользователь не найден.");
+            }
+
+            var client = await GetAuthorizedClientAsync();
+            var response = await client.PostAsJsonAsync($"books/{bookId}/issue", userId);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return RedirectToAction("Index");
+            }
+
+            return BadRequest();
         }
 
         public async Task<IActionResult> Create()

@@ -20,3 +20,8 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.btn-group {
+    display: flex; /* Use flexbox for layout */
+    gap: 5px; /* Space between buttons */
+}

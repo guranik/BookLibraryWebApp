@@ -24,9 +24,9 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetByUser(int userId, int pageNumber = 1, int pageSize = 10)
+        public IActionResult GetByUser(int userId, int pageNumber = 1, int pageSize = 10)
         {
-            var issuedBooks = await Task.Run(() => _issuedBookService.GetByUser(userId, pageNumber, pageSize));
+            var issuedBooks = _issuedBookService.GetByUser(userId, pageNumber, pageSize);
 
             if (!issuedBooks.Items.Any())
             {

@@ -32,7 +32,7 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchBooks(
+        public IActionResult SearchBooks(
             string genre = "",
             string author = "",
             string bookName = "",
@@ -43,11 +43,11 @@ namespace BookLibraryAPI.Controllers
 
             if (book != null)
             {
-                var bookDto = _mapper.Map<BookDto>(book);
+                var bookDto = _mapper.Map<BookInfoDto>(book);
                 return Ok(bookDto);
             }
 
-            var pagedBooks = await Task.Run(() => _bookService.GetPagedBooks(genre, author, bookName, pageNumber, pageSize));
+            var pagedBooks = _bookService.GetPagedBooks(genre, author, bookName, pageNumber, pageSize);
 
             if (!pagedBooks.Items.Any())
             {
@@ -71,7 +71,7 @@ namespace BookLibraryAPI.Controllers
         [HttpPost("{bookId}/issue")]
         public IActionResult IssueBook(int bookId, [FromBody] int userId)
         {
-            _bookService.IssueBook(bookId);
+             _bookService.IssueBook(bookId);
             var issuedBook = new IssuedBook
             {
                 BookId = bookId,
@@ -79,7 +79,7 @@ namespace BookLibraryAPI.Controllers
                 Issued = DateTime.UtcNow,
                 Return = DateTime.UtcNow.AddDays(14)
             };
-            _issuedBookService.Create(issuedBook);
+             _issuedBookService.Create(issuedBook);
 
             var book = _bookService.GetById(bookId);
             var bookDto = _mapper.Map<BookDto>(book);
@@ -147,10 +147,22 @@ namespace BookLibraryAPI.Controllers
             {
                 return BadRequest("Book ID mismatch.");
             }
-            var book = _bookService.GetById(bookDto.Id);
 
-            book = _mapper.Map<Book>(bookDto);
-            _bookService.Update(book);
+            var existingBook = _bookService.GetById(id);
+            if (existingBook == null)
+            {
+                return NotFound();
+            }
+
+            existingBook.Title = bookDto.Title;
+            existingBook.Description = bookDto.Description;
+            existingBook.BookNumber = bookDto.BookNumber;
+            existingBook.ISBN = bookDto.ISBN;
+            existingBook.AuthorId = bookDto.AuthorId;
+            existingBook.GenreId = bookDto.GenreId;
+
+            _bookService.Update(existingBook);
+
             return NoContent();
         }
 

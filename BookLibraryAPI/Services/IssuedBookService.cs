@@ -4,6 +4,8 @@ using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
 using BookLibraryAPI.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using BookLibraryAPI.Middleware;
 
 namespace BookLibraryAPI.Services
 {
@@ -46,6 +48,11 @@ namespace BookLibraryAPI.Services
 
         public void Create(IssuedBook issuedBook)
         {
+            if(_context.IssuedBooks.Any(b => b.UserId == issuedBook.UserId && b.BookId == issuedBook.BookId))
+            {
+                throw new BookIsAlreadyIssuedException("Вы уже взяли данную книгу.");
+            }
+
             _context.IssuedBooks.Add(issuedBook);
             _context.SaveChanges();
         }
