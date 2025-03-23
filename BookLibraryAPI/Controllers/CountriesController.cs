@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BookLibraryAPI.Interfaces;
-using BookLibraryAPI.Models;
 using BookLibraryAPI.DTOs.Countries;
-using AutoMapper;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using BookLibraryAPI.Services;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -13,32 +12,28 @@ namespace BookLibraryAPI.Controllers
     [Route("api/[controller]")]
     public class CountriesController : ControllerBase
     {
-        private readonly IAllCountries _countryService;
-        private readonly IMapper _mapper;
+        private readonly ICountryService _countryService;
 
-        public CountriesController(IAllCountries countryService, IMapper mapper)
+        public CountriesController(ICountryService countryService)
         {
             _countryService = countryService;
-            _mapper = mapper;
         }
 
         [HttpGet("all")]
         public async Task<ActionResult<IEnumerable<CountryDto>>> GetAllCountries()
         {
-            var countries = await _countryService.GetAllCountriesAsync();
-            var countryDtos = _mapper.Map<List<CountryDto>>(countries);
+            var countryDtos = await _countryService.GetAllCountriesAsync();
             return Ok(countryDtos);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<CountryDto>> GetCountryById(int id)
         {
-            var country = await _countryService.GetByIdAsync(id);
-            if (country == null)
+            var countryDto = await _countryService.GetCountryByIdAsync(id);
+            if (countryDto == null)
             {
                 return NotFound();
             }
-            var countryDto = _mapper.Map<CountryDto>(country);
             return Ok(countryDto);
         }
 
@@ -51,9 +46,8 @@ namespace BookLibraryAPI.Controllers
                 return BadRequest("Country cannot be null.");
             }
 
-            var country = _mapper.Map<Country>(countryDto);
-            await _countryService.CreateAsync(country);
-            return CreatedAtRoute("GetCountryById", new { id = country.Id }, countryDto);
+            await _countryService.CreateCountryAsync(countryDto);
+            return CreatedAtRoute(nameof(GetCountryById), new { id = countryDto.Id }, countryDto);
         }
 
         [Authorize(Policy = "AdminOnly")]
@@ -65,10 +59,9 @@ namespace BookLibraryAPI.Controllers
                 return BadRequest("Country data is invalid.");
             }
 
-            var country = _mapper.Map<Country>(countryDto);
             try
             {
-                await _countryService.UpdateAsync(country);
+                await _countryService.UpdateCountryAsync(countryDto);
                 return NoContent();
             }
             catch (InvalidOperationException)
@@ -81,13 +74,13 @@ namespace BookLibraryAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCountry(int id)
         {
-            var country = await _countryService.GetByIdAsync(id);
+            var country = await _countryService.GetCountryByIdAsync(id);
             if (country == null)
             {
                 return NotFound();
             }
 
-            await _countryService.DeleteAsync(country);
+            await _countryService.DeleteCountryAsync(id);
             return NoContent();
         }
     }

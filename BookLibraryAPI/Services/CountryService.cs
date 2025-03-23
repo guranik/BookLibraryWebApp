@@ -1,45 +1,63 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using AutoMapper;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
-using Microsoft.EntityFrameworkCore;
+using BookLibraryAPI.DTOs.Countries;
 
 namespace BookLibraryAPI.Services
 {
-    public class CountryService : IAllCountries
+    public interface ICountryService
     {
-        private readonly Db15460Context _context;
+        Task<List<CountryDto>> GetAllCountriesAsync();
+        Task<CountryDto> GetCountryByIdAsync(int id);
+        Task CreateCountryAsync(CountryDto countryDto);
+        Task UpdateCountryAsync(CountryDto countryDto);
+        Task DeleteCountryAsync(int id);
+    }
 
-        public CountryService(Db15460Context context)
+    public class CountryService : ICountryService
+    {
+        private readonly IAllCountries _countryRepository;
+        private readonly IMapper _mapper;
+
+        public CountryService(IAllCountries countryRepository, IMapper mapper)
         {
-            _context = context;
+            _countryRepository = countryRepository;
+            _mapper = mapper;
         }
 
-        public async Task<IEnumerable<Country>> GetAllCountriesAsync()
-            => await _context.Countries.ToListAsync();
-
-        public async Task<Country> GetByIdAsync(int id)
+        public async Task<List<CountryDto>> GetAllCountriesAsync()
         {
-            return await _context.Countries.FirstOrDefaultAsync(c => c.Id == id)
-                ?? throw new InvalidOperationException($"Страна с ID {id} не найдена.");
+            var countries = await _countryRepository.GetAllCountriesAsync();
+            return _mapper.Map<List<CountryDto>>(countries);
         }
 
-        public async Task CreateAsync(Country country)
+        public async Task<CountryDto> GetCountryByIdAsync(int id)
         {
-            await _context.Countries.AddAsync(country);
-            await _context.SaveChangesAsync();
+            var country = await _countryRepository.GetByIdAsync(id);
+            return _mapper.Map<CountryDto>(country);
         }
 
-        public async Task UpdateAsync(Country country)
+        public async Task CreateCountryAsync(CountryDto countryDto)
         {
-            _context.Countries.Update(country);
-            await _context.SaveChangesAsync();
+            var country = _mapper.Map<Country>(countryDto);
+            await _countryRepository.CreateAsync(country);
         }
 
-        public async Task DeleteAsync(Country country)
+        public async Task UpdateCountryAsync(CountryDto countryDto)
         {
-            _context.Countries.Remove(country);
-            await _context.SaveChangesAsync();
+            var country = _mapper.Map<Country>(countryDto);
+            await _countryRepository.UpdateAsync(country);
+        }
+
+        public async Task DeleteCountryAsync(int id)
+        {
+            var country = await _countryRepository.GetByIdAsync(id);
+            if (country != null)
+            {
+                await _countryRepository.DeleteAsync(country);
+            }
         }
     }
 }

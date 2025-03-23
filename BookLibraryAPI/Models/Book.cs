@@ -13,6 +13,7 @@ namespace BookLibraryAPI.Models
         public int GenreId { get; set; }
         public Genre? Genre { get; set; }
         public int BookNumber { get; set; }
+        public string? ImageUrl { get; set; }
         public ICollection<IssuedBook> IssuedBooks { get; set; } = new List<IssuedBook>();
     }
 }

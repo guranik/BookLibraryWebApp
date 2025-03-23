@@ -5,7 +5,12 @@ VisualStudioVersion = 17.11.35303.130
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookLibraryAPI", "BookLibraryAPI\BookLibraryAPI.csproj", "{A13BE9DA-C447-4AA2-9ABD-C356B31B4881}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookLibraryClient", "BookLibraryClient\BookLibraryClient.csproj", "{4AA3654E-4EE9-4538-B2F8-6C93280137D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookLibraryClient", "BookLibraryClient\BookLibraryClient.csproj", "{4AA3654E-4EE9-4538-B2F8-6C93280137D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookLibraryWebAPITests", "BookLibraryWebAPITests\BookLibraryWebAPITests.csproj", "{D2437300-1590-4313-9206-503BA1E42A2F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A13BE9DA-C447-4AA2-9ABD-C356B31B4881} = {A13BE9DA-C447-4AA2-9ABD-C356B31B4881}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +26,10 @@ Global
 		{4AA3654E-4EE9-4538-B2F8-6C93280137D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4AA3654E-4EE9-4538-B2F8-6C93280137D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4AA3654E-4EE9-4538-B2F8-6C93280137D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2437300-1590-4313-9206-503BA1E42A2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2437300-1590-4313-9206-503BA1E42A2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2437300-1590-4313-9206-503BA1E42A2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2437300-1590-4313-9206-503BA1E42A2F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

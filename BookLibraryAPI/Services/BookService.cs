@@ -1,126 +1,130 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
-using BookLibraryAPI.ViewModels;
-using BookLibraryAPI.Middleware;
-using Microsoft.EntityFrameworkCore;
+using BookLibraryAPI.DTOs.Books;
+using BookLibraryAPI.DTOs.PagedResult;
 
 namespace BookLibraryAPI.Services
 {
-    public class BookService : IAllBooks
+    public interface IBookService
     {
-        private readonly Db15460Context _context;
+        Task<PagedBooksDto> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize);
+        Task<BookInfoDto> GetByIdAsync(int id);
+        Task<Book> GetByISBNAsync(string isbn);
+        Task IssueBookAsync(int bookId, int userId);
+        Task ReturnBookAsync(int issuedBookId);
+        Task CreateAsync(BookInfoDto bookDto);
+        Task UpdateAsync(int id, BookInfoDto bookDto);
+        Task DeleteAsync(int id);
+        Task<bool> AreAllBooksIssuedAsync(string title, string authorName);
+        Task<List<BookDto>> GetByAuthorAsync(int authorId);
+    }
 
-        public BookService(Db15460Context context)
+    public class BookService : IBookService
+    {
+        private readonly IAllBooks _bookRepository;
+        private readonly IAllAuthors _authorService;
+        private readonly IAllGenres _genresService;
+        private readonly IAllIssuedBooks _issuedBookService;
+        private readonly IMapper _mapper;
+
+        public BookService(IAllBooks bookRepository, IAllAuthors authorService, IAllGenres genresService, IAllIssuedBooks issuedBookService, IMapper mapper)
         {
-            _context = context;
+            _bookRepository = bookRepository;
+            _authorService = authorService;
+            _genresService = genresService;
+            _issuedBookService = issuedBookService;
+            _mapper = mapper;
         }
 
-        public async Task<IEnumerable<Book>> GetAllBooksAsync()
+        public async Task<PagedBooksDto> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize)
         {
-            return await _context.Books.Include(b => b.Author).Include(b => b.Genre).ToListAsync();
+            var pagedBooks = await _bookRepository.GetPagedBooksAsync(genre, author, bookName, pageNumber, pageSize);
+            var bookDtos = _mapper.Map<List<BookDto>>(pagedBooks.Items);
+            return new PagedBooksDto
+            {
+                Items = bookDtos,
+                TotalPages = pagedBooks.TotalPages,
+                CurrentPage = pagedBooks.PageNumber
+            };
         }
 
-        public async Task<PagedList<Book>> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize)
+        public async Task<BookInfoDto> GetByIdAsync(int id)
         {
-            IQueryable<Book> books = _context.Books.Where(b => b.BookNumber > 0).Include(b => b.Author).Include(b => b.Genre);
-
-            if (!string.IsNullOrEmpty(genre))
-            {
-                books = books.Where(b => b.Genre.Name == genre);
-            }
-
-            if (!string.IsNullOrEmpty(author))
-            {
-                var authorParts = author.Split(' ');
-                string firstName = authorParts[0];
-                string lastName = authorParts.Length > 1 ? authorParts[1] : string.Empty;
-
-                books = books.Where(b =>
-                    (b.Author.Name.Contains(firstName) || string.IsNullOrEmpty(firstName)) &&
-                    (b.Author.Surname.Contains(lastName) || string.IsNullOrEmpty(lastName))
-                );
-            }
-
-            if (!string.IsNullOrEmpty(bookName))
-            {
-                books = books.Where(b => b.Title.Equals(bookName));
-            }
-            
-            var totalCount = await books.CountAsync();
-            var items = await books.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-
-            return new PagedList<Book>(items, totalCount, pageNumber, pageSize);
-        }
-
-        public async Task<Book> GetByIdAsync(int id)
-        {
-            return await _context.Books.Include(b => b.Author).Include(b => b.Genre).FirstOrDefaultAsync(b => b.Id == id)
-                ?? throw new InvalidOperationException($"Book with ID {id} not found.");
+            var book = await _bookRepository.GetByIdAsync(id);
+            return _mapper.Map<BookInfoDto>(book);
         }
 
         public async Task<Book> GetByISBNAsync(string isbn)
         {
-            return await _context.Books.Include(b => b.Author).Include(b => b.Genre)
-                .FirstOrDefaultAsync(b => b.ISBN.Equals(isbn));
+            return await _bookRepository.GetByISBNAsync(isbn);
         }
 
-        public async Task IssueBookAsync(int bookId)
+        public async Task IssueBookAsync(int bookId, int userId)
         {
-            var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == bookId);
-
-            if (book.BookNumber > 0)
+            await _bookRepository.IssueBookAsync(bookId);
+            var issuedBook = new IssuedBook
             {
-                book.BookNumber--;
-                await _context.SaveChangesAsync();
+                BookId = bookId,
+                UserId = userId,
+                Issued = DateTime.UtcNow,
+                Return = DateTime.UtcNow.AddDays(14)
+            };
+            try
+            {
+                await _issuedBookService.CreateAsync(issuedBook);
             }
-            else
+            catch(Exception ex)
             {
-                throw new NoAvailableBooksException($"There are no books \"{book.Title}\" : \"{book.ISBN}\" left.");
-            }
-        }
-
-        public async Task ReturnBookAsync(int bookId)
-        {
-            var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == bookId);
-            if (book != null)
-            {
-                book.BookNumber++;
-                await _context.SaveChangesAsync();
+                await _bookRepository.ReturnBookAsync(bookId);
             }
         }
 
-        public async Task<IEnumerable<Book>> GetByAuthorAsync(int authorId)
+        public async Task ReturnBookAsync(int issuedBookId)
         {
-            return await _context.Books.Include(b => b.Author).Include(b => b.Genre)
-                .Where(b => b.AuthorId == authorId).ToListAsync();
+            var issuedBook = await _issuedBookService.GetByIdAsync(issuedBookId);
+            await _issuedBookService.DeleteAsync(issuedBook);
+            await _bookRepository.ReturnBookAsync(issuedBookId);
         }
 
-        public async Task UpdateAsync(Book book)
+        public async Task CreateAsync(BookInfoDto bookDto)
         {
-            _context.Books.Update(book);
-            await _context.SaveChangesAsync();
+            var book = _mapper.Map<Book>(bookDto);
+            book.Author = await _authorService.GetByIdAsync(bookDto.AuthorId);
+            book.Genre = await _genresService.GetByIdAsync(bookDto.GenreId);
+            await _bookRepository.CreateAsync(book);
         }
 
-        public async Task DeleteAsync(Book book)
+        public async Task UpdateAsync(int id, BookInfoDto bookDto)
         {
-            _context.Books.Remove(book);
-            await _context.SaveChangesAsync();
+            var existingBook = await _bookRepository.GetByIdAsync(id);
+            existingBook.Title = bookDto.Title;
+            existingBook.Description = bookDto.Description;
+            existingBook.BookNumber = bookDto.BookNumber;
+            existingBook.ISBN = bookDto.ISBN;
+            existingBook.AuthorId = bookDto.AuthorId;
+            existingBook.GenreId = bookDto.GenreId;
+
+            await _bookRepository.UpdateAsync(existingBook);
         }
 
-        public async Task CreateAsync(Book book)
+        public async Task DeleteAsync(int id)
         {
-            await _context.Books.AddAsync(book);
-            await _context.SaveChangesAsync();
+            var book = await _bookRepository.GetByIdAsync(id);
+            await _bookRepository.DeleteAsync(book);
         }
 
         public async Task<bool> AreAllBooksIssuedAsync(string title, string authorName)
         {
-            return await _context.Books
-                .Where(b => b.Author.Name + " " + b.Author.Surname == authorName && b.Title == title)
-                .AllAsync(b => b.BookNumber == 0);
+            return await _bookRepository.AreAllBooksIssuedAsync(title, authorName);
+        }
+
+        public async Task<List<BookDto>> GetByAuthorAsync(int authorId)
+        {
+            var books = await _bookRepository.GetByAuthorAsync(authorId);
+            return _mapper.Map<List<BookDto>>(books);
         }
     }
 }

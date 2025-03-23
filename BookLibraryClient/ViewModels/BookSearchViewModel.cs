@@ -1,12 +1,12 @@
 ﻿using BookLibraryClient.DTOs.Authors;
 using BookLibraryClient.DTOs.Genres;
-using BookLibraryClient.DTOs.Books;
+using BookLibraryClient.DTOs.PagedResults;
 
 namespace BookLibraryClient.ViewModels
 {
     public class BookSearchViewModel
     {
-        public List<BookDto> Books { get; set; } = new List<BookDto>();
+        public PagedBooksDto PagedBooks { get; set; } = new PagedBooksDto();
         public List<AuthorDto> Authors { get; set; } = new List<AuthorDto>();
         public List<GenreDto> Genres { get; set; } = new List<GenreDto>();
         public string? SelectedGenre { get; set; }

@@ -1,18 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
-using BookLibraryAPI.Models;
-using BookLibraryAPI.Services;
-using AutoMapper;
-using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.DTOs.Users;
-using System.Collections.Generic;
+using BookLibraryAPI.Interfaces;
+using BookLibraryAPI.Services;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -20,38 +12,21 @@ namespace BookLibraryAPI.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly UserManager<User> _userManager;
+        private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
-        private readonly RefreshTokenService _refreshTokenService;
-        private readonly IMapper _mapper;
-        private readonly IAllUsers _userService;
 
-        public UserController(UserManager<User> userManager, IConfiguration configuration, RefreshTokenService refreshTokenService, IMapper mapper, IAllUsers userService)
+        public UserController(IUserService userService, IConfiguration configuration)
         {
-            _userManager = userManager;
-            _configuration = configuration;
-            _refreshTokenService = refreshTokenService;
-            _mapper = mapper;
             _userService = userService;
+            _configuration = configuration;
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel registerUserDto)
         {
-            var user = _mapper.Map<User>(registerUserDto);
-            var result = await _userManager.CreateAsync(user, registerUserDto.Password);
-
+            var result = await _userService.RegisterUserAsync(registerUserDto);
             if (result.Succeeded)
             {
-                if (!string.IsNullOrEmpty(registerUserDto.Role))
-                {
-                    var roleResult = await _userManager.AddToRoleAsync(user, registerUserDto.Role);
-                    if (!roleResult.Succeeded)
-                    {
-                        return BadRequest(roleResult.Errors);
-                    }
-                }
-
                 return Ok(new { Message = "User registered successfully." });
             }
 
@@ -61,78 +36,24 @@ namespace BookLibraryAPI.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel loginModel)
         {
-            var user = await _userManager.FindByNameAsync(loginModel.Username);
-
-            if (user != null && await _userManager.CheckPasswordAsync(user, loginModel.Password))
+            var (token, refreshToken) = await _userService.LoginUserAsync(loginModel);
+            if (token != null)
             {
-                var token = GenerateJwtToken(user);
-                var refreshToken = _refreshTokenService.CreateRefreshTokenAsync(user.Id);
-
-                return Ok(new { Token = token, RefreshToken = refreshToken.Token });
+                return Ok(new { Token = token, RefreshToken = refreshToken });
             }
 
             return Unauthorized();
-        }
-
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshTokenModel model)
-        {
-            var storedToken = await _refreshTokenService.GetValidRefreshTokenAsync(model.RefreshToken);
-            if (storedToken == null)
-            {
-                return Unauthorized();
-            }
-
-            var user = await _userManager.FindByIdAsync(storedToken.UserId.ToString());
-            if (user == null)
-            {
-                return Unauthorized();
-            }
-
-            var newToken = GenerateJwtToken(user);
-            await _refreshTokenService.RevokeRefreshTokenAsync(storedToken);
-            var newRefreshToken = _refreshTokenService.CreateRefreshTokenAsync(user.Id);
-
-            return Ok(new { Token = newToken, RefreshToken = newRefreshToken.Token });
-        }
-
-        private string GenerateJwtToken(User user)
-        {
-            if (user.UserName == null)
-                throw new ArgumentNullException(nameof(user.UserName));
-
-            var roles = _userManager.GetRolesAsync(user).Result;
-
-            var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString())
-            };
-
-            foreach (var role in roles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            }
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new ArgumentNullException("JWT Key cannot be null")));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Issuer"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(30),
-                signingCredentials: creds);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         [Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUser(int id)
         {
-            var user = await _userService.GetUserAsync(id);
-            var userDto = _mapper.Map<UserDto>(user);
+            var userDto = await _userService.GetUserAsync(id);
+            if (userDto == null)
+            {
+                return NotFound();
+            }
             return Ok(userDto);
         }
     }

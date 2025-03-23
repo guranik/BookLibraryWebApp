@@ -94,13 +94,18 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<RefreshTokenService>();
-builder.Services.AddScoped<IAllUsers,UserService>();
-builder.Services.AddScoped<IAllBooks,BookService>();
-builder.Services.AddScoped<IAllCountries,CountryService>();
-builder.Services.AddScoped<IAllGenres,GenreService>();
-builder.Services.AddScoped<IAllAuthors,AuthorService>();
-builder.Services.AddScoped<IAllIssuedBooks,IssuedBookService>();
-
+builder.Services.AddScoped<IAllUsers,UserRepository>();
+builder.Services.AddScoped<IAllBooks,BookRepository>();
+builder.Services.AddScoped<IAllCountries,CountryRepository>();
+builder.Services.AddScoped<IAllGenres,GenreRepository>();
+builder.Services.AddScoped<IAllAuthors,AuthorRepository>();
+builder.Services.AddScoped<IAllIssuedBooks,IssuedBookRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<IGenreService, GenreService>();
+builder.Services.AddScoped<IIssuedBookService, IssuedBookService>();
+builder.Services.AddScoped<ICountryService, CountryService>();
+builder.Services.AddScoped<IAuthorService, AuthorService>();
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

@@ -2,7 +2,7 @@
 
 <div>
     <h1>@(Model.Id > 0 ? "Edit Book" : "Create Book")</h1>
-    <form asp-action="@(Model.Id > 0 ? "Edit" : "Create")">
+    <form asp-action="@(Model.Id > 0 ? "Edit" : "Create")" method="post" enctype="multipart/form-data">
         <input type="hidden" asp-for="Id" />
 
         <div class="form-group">

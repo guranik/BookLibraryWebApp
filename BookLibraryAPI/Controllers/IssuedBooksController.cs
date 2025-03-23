@@ -1,13 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BookLibraryAPI.Interfaces;
-using BookLibraryAPI.Models;
 using BookLibraryAPI.DTOs.IssuedBooks;
-using BookLibraryAPI.DTOs.PagedResult;
-using AutoMapper;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using BookLibraryAPI.Services;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -15,44 +11,32 @@ namespace BookLibraryAPI.Controllers
     [Route("api/[controller]")]
     public class IssuedBooksController : ControllerBase
     {
-        private readonly IAllIssuedBooks _issuedBookService;
-        private readonly IMapper _mapper;
+        private readonly IIssuedBookService _issuedBookService;
 
-        public IssuedBooksController(IAllIssuedBooks issuedBookService, IMapper mapper)
+        public IssuedBooksController(IIssuedBookService issuedBookService)
         {
             _issuedBookService = issuedBookService;
-            _mapper = mapper;
         }
 
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUser(int userId, int pageNumber = 1, int pageSize = 10)
         {
-            var issuedBooks = await _issuedBookService.GetByUserAsync(userId, pageNumber, pageSize);
-
-            if (!issuedBooks.Items.Any())
+            var issuedBooksDto = await _issuedBookService.GetByUserAsync(userId, pageNumber, pageSize);
+            if (issuedBooksDto.Items.Count == 0)
             {
                 return NotFound(new { Message = "No issued books found for this user." });
             }
-
-            var issuedBookDtos = _mapper.Map<List<IssuedBookDto>>(issuedBooks.Items);
-            return Ok(new PagedIssuedBooksDto
-            {
-                Items = issuedBookDtos,
-                TotalPages = issuedBooks.TotalPages,
-                CurrentPage = issuedBooks.PageNumber
-            });
+            return Ok(issuedBooksDto);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var issuedBook = await _issuedBookService.GetByIdAsync(id);
-            if (issuedBook == null)
+            var issuedBookDto = await _issuedBookService.GetByIdAsync(id);
+            if (issuedBookDto == null)
             {
                 return NotFound();
             }
-
-            var issuedBookDto = _mapper.Map<IssuedBookDto>(issuedBook);
             return Ok(issuedBookDto);
         }
 
@@ -64,10 +48,8 @@ namespace BookLibraryAPI.Controllers
             {
                 return BadRequest("Issued Book cannot be null.");
             }
-
-            var issuedBook = _mapper.Map<IssuedBook>(issuedBookDto);
-            await _issuedBookService.CreateAsync(issuedBook);
-            return CreatedAtAction(nameof(GetById), new { id = issuedBook.Id }, issuedBookDto);
+            await _issuedBookService.CreateAsync(issuedBookDto);
+            return CreatedAtAction(nameof(GetById), new { id = issuedBookDto.Id }, issuedBookDto);
         }
 
         [HttpPut("{id}")]
@@ -78,9 +60,7 @@ namespace BookLibraryAPI.Controllers
             {
                 return BadRequest("Issued Book data is invalid.");
             }
-
-            var issuedBook = _mapper.Map<IssuedBook>(issuedBookDto);
-            await _issuedBookService.UpdateAsync(issuedBook);
+            await _issuedBookService.UpdateAsync(id, issuedBookDto);
             return NoContent();
         }
 
@@ -93,8 +73,7 @@ namespace BookLibraryAPI.Controllers
             {
                 return NotFound();
             }
-
-            await _issuedBookService.DeleteAsync(issuedBook);
+            await _issuedBookService.DeleteAsync(id);
             return NoContent();
         }
     }

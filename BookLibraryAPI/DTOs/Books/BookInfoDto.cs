@@ -14,5 +14,6 @@ namespace BookLibraryAPI.DTOs.Books
         public GenreDto? Genre { get; set; }
         public int BookNumber { get; set; }
         public string? ISBN { get; set; }
+        public string? Imagename { get; set; }
     }
 }

@@ -1,10 +1,6 @@
 ﻿@model BookLibraryClient.ViewModels.BookSearchViewModel
 
-@{
-    ViewData["Title"] = "Books";
-}
-
-<h2>Books</h2>
+<h2>Библиотека</h2>
 
 <div class="container">
     <form method="get" asp-action="Index">
@@ -14,7 +10,7 @@
                     <option value="">Select Genre</option>
                     @foreach (var genre in Model.Genres)
                     {
-                        <option value="@genre" selected="@(Model.SelectedGenre == genre.Id.ToString() ? "selected" : null)">@genre.Name</option>
+                            <option value="@genre.Name" selected="@(Model.SelectedGenre == genre.ToString() ? "selected" : null)">@genre.Name</option>
                     }
                 </select>
             </div>
@@ -23,7 +19,7 @@
                     <option value="">Select Author</option>
                     @foreach (var author in Model.Authors)
                     {
-                        <option value="@author" selected="@(Model.SelectedAuthor == author.Id.ToString() ? "selected" : null)">@author.Name</option>
+                            <option value="@author.ToString()" selected="@(Model.SelectedAuthor == author.ToString() ? "selected" : null)">@author.Name</option>
                     }
                 </select>
             </div>
@@ -36,32 +32,75 @@
         </div>
     </form>
 
+    @if (User.IsInRole("Admin"))
+    {
+        <a asp-action="Create" style="margin: 8px" class="btn btn-success">Добавить</a>
+    }
+
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-light text-center" style="background-color: #f8f9fa;">
-            <strong>@Model.ErrorMessage</strong>
-        </div>
+            <div class="alert alert-light text-center" style="background-color: #f8f9fa;">
+                <strong>@Model.ErrorMessage</strong>
+            </div>
     }
     else
     {
-        foreach (var book in Model.Books)
+        foreach (var book in Model.PagedBooks.Items)
         {
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">@($"{book.Title} | {book.AuthorName}")</h5>
-                    <p class="card-text">Genre: @book.Genre</p>
-                    <p class="card-text">Available Copies: @book.BookNumber</p>
-                    <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-info">Details</a>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">@($"{book.Title} | {book.AuthorName}")</h5>
+                            <p class="card-text">Genre: @book.Genre</p>
+                            <p class="card-text">Available Copies: @book.BookNumber</p>
+                            <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-info">Details</a>
 
                     @if (User.IsInRole("Admin"))
                     {
-                        <a asp-action="Edit" asp-route-id="@book.Id" class="btn btn-warning">Edit</a>
-                        <form asp-action="Delete" asp-route-id="@book.Id" method="post" class="d-inline" style="margin-left: 2px;">
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите удалить эту книгу?');">Удалить</button>
-                        </form>
+                                    <a asp-action="Edit" asp-route-id="@book.Id" class="btn btn-warning">Изменить</a>
+                                    <form asp-action="Delete" asp-route-id="@book.Id" method="post" class="d-inline" style="margin-left: 2px;">
+                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Вы уверены, что хотите удалить эту книгу?');">Удалить</button>
+                                    </form>
                     }
-                </div>
-            </div>
+                        </div>
+                    </div>
         }
     }
+
+    <div class="pagination" style="display: flex; justify-content: center; align-items: center;">
+        @if (Model.PagedBooks.TotalPages > 1)
+        {
+            if (Model.PagedBooks.CurrentPage > 1)
+            {
+                        <a href="@Url.Action("Index", new { genre = Model.SelectedGenre, author = Model.SelectedAuthor, bookName = Model.BookName, pageNumber = 1 })" class="btn btn-secondary" style="margin: 0 3px;">1</a>
+            }
+
+            if (Model.PagedBooks.CurrentPage > 3)
+            {
+                        <span style="margin: 0 3px;">...</span>
+            }
+
+            if (Model.PagedBooks.CurrentPage > 2)
+            {
+                        <a href="@Url.Action("Index", new { genre = Model.SelectedGenre, author = Model.SelectedAuthor, bookName = Model.BookName, pageNumber = Model.PagedBooks.CurrentPage - 1 })" class="btn btn-secondary" style="margin: 0 3px;">@(Model.PagedBooks.CurrentPage - 1)</a>
+            }
+
+                <div style="display: flex; align-items: center; margin: 0 13px;">
+                    @Model.PagedBooks.CurrentPage
+                </div>
+
+            if (Model.PagedBooks.CurrentPage < Model.PagedBooks.TotalPages)
+            {
+                        <a href="@Url.Action("Index", new { genre = Model.SelectedGenre, author = Model.SelectedAuthor, bookName = Model.BookName, pageNumber = Model.PagedBooks.CurrentPage + 1 })" class="btn btn-secondary" style="margin: 0 3px;">@(Model.PagedBooks.CurrentPage + 1)</a>
+            }
+
+            if (Model.PagedBooks.CurrentPage < Model.PagedBooks.TotalPages - 2)
+            {
+                        <span style="margin: 0 3px;">...</span>
+            }
+
+            if (Model.PagedBooks.CurrentPage < Model.PagedBooks.TotalPages)
+            {
+                        <a href="@Url.Action("Index", new { genre = Model.SelectedGenre, author = Model.SelectedAuthor, bookName = Model.BookName, pageNumber = Model.PagedBooks.TotalPages })" class="btn btn-secondary" style="margin: 0 3px;">@Model.PagedBooks.TotalPages</a>
+            }
+        }
 </div>

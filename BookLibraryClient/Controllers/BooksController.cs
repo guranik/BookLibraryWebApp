@@ -22,10 +22,10 @@ namespace BookLibraryClient.Controllers
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<IActionResult> Index(string genre = "", string author = "", string bookName = "")
+        public async Task<IActionResult> Index(string genre = "", string author = "", string bookName = "", int pageNumber = 1)
         {
             var client = await GetAuthorizedClientAsync();
-            var response = await client.GetAsync($"books/search?genre={genre}&author={author}&bookName={bookName}");
+            var response = await client.GetAsync($"books/search?genre={genre}&author={author}&bookName={bookName}&pageNumber={pageNumber}");
 
             var jsonResponse = await response.Content.ReadAsStringAsync();
 
@@ -40,7 +40,7 @@ namespace BookLibraryClient.Controllers
                 var pagedBooks = JsonConvert.DeserializeObject<PagedBooksDto>(jsonResponse);
                 var model = new BookSearchViewModel
                 {
-                    Books = pagedBooks?.Items ?? new List<BookDto>(),
+                    PagedBooks = pagedBooks ?? new PagedBooksDto(),
                     Authors = await GetAuthorsAsync(),
                     Genres = await GetGenresAsync(),
                     SelectedGenre = genre,
@@ -56,7 +56,7 @@ namespace BookLibraryClient.Controllers
                 var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonResponse);
                 var model = new BookSearchViewModel
                 {
-                    Books = new List<BookDto>(),
+                    PagedBooks = new PagedBooksDto(),
                     Authors = await GetAuthorsAsync(),
                     Genres = await GetGenresAsync(),
                     SelectedGenre = genre,
