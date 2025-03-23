@@ -1,13 +1,15 @@
-﻿using BookLibraryAPI.Models;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using BookLibraryAPI.Models;
 
 namespace BookLibraryAPI.Interfaces
 {
     public interface IAllUsers
     {
-        IEnumerable<User> AllUsers { get; }
-        User GetUser(int id);
-        void Create(User user);
-        void Update(User user);
-        void Delete(User user);
+        Task<IEnumerable<User>> GetAllUsersAsync();
+        Task<User> GetUserAsync(int id);
+        Task CreateAsync(User user);
+        Task UpdateAsync(User user);
+        Task DeleteAsync(User user);
     }
 }

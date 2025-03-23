@@ -32,14 +32,14 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("search")]
-        public IActionResult SearchBooks(
+        public async Task<IActionResult> SearchBooks(
             string genre = "",
             string author = "",
             string bookName = "",
             int pageNumber = 1,
             int pageSize = 10)
         {
-            var book = _bookService.GetByISBN(bookName);
+            var book = await _bookService.GetByISBNAsync(bookName);
 
             if (book != null)
             {
@@ -47,14 +47,14 @@ namespace BookLibraryAPI.Controllers
                 return Ok(bookDto);
             }
 
-            var pagedBooks = _bookService.GetPagedBooks(genre, author, bookName, pageNumber, pageSize);
+            var pagedBooks = await _bookService.GetPagedBooksAsync(genre, author, bookName, pageNumber, pageSize);
 
             if (!pagedBooks.Items.Any())
             {
-                bool allIssued = _bookService.AreAllBooksIssued(bookName, int.TryParse(author, out var authorId) ? authorId : 0);
+                bool allIssued = await _bookService.AreAllBooksIssuedAsync(bookName, author);
                 string message = allIssued
-                    ? $"All Books {bookName} by {pagedBooks.Items.FirstOrDefault()?.Author.Name} {pagedBooks.Items.FirstOrDefault()?.Author.Surname} were issued."
-                    : "No matches found.";
+                    ? $"Все книги '{bookName}' автора {author} выданы."
+                    : "Совпадений не найдено.";
                 return NotFound(new { Message = message });
             }
 
@@ -69,9 +69,9 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpPost("{bookId}/issue")]
-        public IActionResult IssueBook(int bookId, [FromBody] int userId)
+        public async Task<IActionResult> IssueBook(int bookId, [FromBody] int userId)
         {
-             _bookService.IssueBook(bookId);
+            await _bookService.IssueBookAsync(bookId);
             var issuedBook = new IssuedBook
             {
                 BookId = bookId,
@@ -79,33 +79,33 @@ namespace BookLibraryAPI.Controllers
                 Issued = DateTime.UtcNow,
                 Return = DateTime.UtcNow.AddDays(14)
             };
-             _issuedBookService.Create(issuedBook);
+            await _issuedBookService.CreateAsync(issuedBook);
 
-            var book = _bookService.GetById(bookId);
+            var book = await _bookService.GetByIdAsync(bookId);
             var bookDto = _mapper.Map<BookDto>(book);
 
             return Ok(bookDto);
         }
 
         [HttpDelete("return/{issuedBookId}")]
-        public IActionResult ReturnBook(int issuedBookId)
+        public async Task<IActionResult> ReturnBook(int issuedBookId)
         {
-            var issuedBook = _issuedBookService.GetById(issuedBookId);
+            var issuedBook = await _issuedBookService.GetByIdAsync(issuedBookId);
             if (issuedBook == null)
             {
                 return NotFound();
             }
 
-            _bookService.ReturnBook(issuedBookId);
-            _issuedBookService.Delete(issuedBook);
+            await _bookService.ReturnBookAsync(issuedBookId);
+            await _issuedBookService.DeleteAsync(issuedBook);
 
             return NoContent();
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var book = _bookService.GetById(id);
+            var book = await _bookService.GetByIdAsync(id);
             if (book == null)
             {
                 return NotFound();
@@ -116,39 +116,39 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("author/{authorId}")]
-        public IActionResult GetByAuthor(int authorId)
+        public async Task<IActionResult> GetByAuthor(int authorId)
         {
-            var books = _bookService.GetByAuthor(authorId);
+            var books = await _bookService.GetByAuthorAsync(authorId);
             var bookDtos = _mapper.Map<List<BookDto>>(books);
             return Ok(bookDtos);
         }
 
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Create([FromBody] BookInfoDto bookDto)
+        public async Task<IActionResult> Create([FromBody] BookInfoDto bookDto)
         {
             if (bookDto == null)
             {
-                return BadRequest("Book cannot be null.");
+                return BadRequest("Книга не может быть пустой.");
             }
 
             var book = _mapper.Map<Book>(bookDto);
-            book.Author = _authorService.GetById(bookDto.AuthorId);
-            book.Genre = _genresService.GetById(bookDto.GenreId);
-            _bookService.Create(book);
+            book.Author = await _authorService.GetByIdAsync(bookDto.AuthorId);
+            book.Genre = await _genresService.GetByIdAsync(bookDto.GenreId);
+            await _bookService.CreateAsync(book);
             return CreatedAtAction(nameof(GetById), new { id = book.Id }, bookDto);
         }
 
         [HttpPut("{id}")]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Update(int id, [FromBody] BookInfoDto bookDto)
+        public async Task<IActionResult> Update(int id, [FromBody] BookInfoDto bookDto)
         {
             if (bookDto == null || bookDto.Id != id)
             {
-                return BadRequest("Book ID mismatch.");
+                return BadRequest("Несоответствие ID книги.");
             }
 
-            var existingBook = _bookService.GetById(id);
+            var existingBook = await _bookService.GetByIdAsync(id);
             if (existingBook == null)
             {
                 return NotFound();
@@ -161,22 +161,22 @@ namespace BookLibraryAPI.Controllers
             existingBook.AuthorId = bookDto.AuthorId;
             existingBook.GenreId = bookDto.GenreId;
 
-            _bookService.Update(existingBook);
+            await _bookService.UpdateAsync(existingBook);
 
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var book = _bookService.GetById(id);
+            var book = await _bookService.GetByIdAsync(id);
             if (book == null)
             {
                 return NotFound();
             }
 
-            _bookService.Delete(book);
+            await _bookService.DeleteAsync(book);
             return NoContent();
         }
     }

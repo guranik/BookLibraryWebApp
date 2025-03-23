@@ -5,6 +5,7 @@ using BookLibraryAPI.Models;
 using BookLibraryAPI.DTOs.IssuedBooks;
 using BookLibraryAPI.DTOs.PagedResult;
 using AutoMapper;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -24,9 +25,9 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("user/{userId}")]
-        public IActionResult GetByUser(int userId, int pageNumber = 1, int pageSize = 10)
+        public async Task<IActionResult> GetByUser(int userId, int pageNumber = 1, int pageSize = 10)
         {
-            var issuedBooks = _issuedBookService.GetByUser(userId, pageNumber, pageSize);
+            var issuedBooks = await _issuedBookService.GetByUserAsync(userId, pageNumber, pageSize);
 
             if (!issuedBooks.Items.Any())
             {
@@ -43,9 +44,9 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var issuedBook = _issuedBookService.GetById(id);
+            var issuedBook = await _issuedBookService.GetByIdAsync(id);
             if (issuedBook == null)
             {
                 return NotFound();
@@ -57,7 +58,7 @@ namespace BookLibraryAPI.Controllers
 
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Create([FromBody] IssuedBookDto issuedBookDto)
+        public async Task<IActionResult> Create([FromBody] IssuedBookDto issuedBookDto)
         {
             if (issuedBookDto == null)
             {
@@ -65,13 +66,13 @@ namespace BookLibraryAPI.Controllers
             }
 
             var issuedBook = _mapper.Map<IssuedBook>(issuedBookDto);
-            _issuedBookService.Create(issuedBook);
+            await _issuedBookService.CreateAsync(issuedBook);
             return CreatedAtAction(nameof(GetById), new { id = issuedBook.Id }, issuedBookDto);
         }
 
         [HttpPut("{id}")]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Update(int id, [FromBody] IssuedBookDto issuedBookDto)
+        public async Task<IActionResult> Update(int id, [FromBody] IssuedBookDto issuedBookDto)
         {
             if (issuedBookDto == null || issuedBookDto.Id != id)
             {
@@ -79,21 +80,21 @@ namespace BookLibraryAPI.Controllers
             }
 
             var issuedBook = _mapper.Map<IssuedBook>(issuedBookDto);
-            _issuedBookService.Update(issuedBook);
+            await _issuedBookService.UpdateAsync(issuedBook);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         [Authorize(Policy = "AdminOnly")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var issuedBook = _issuedBookService.GetById(id);
+            var issuedBook = await _issuedBookService.GetByIdAsync(id);
             if (issuedBook == null)
             {
                 return NotFound();
             }
 
-            _issuedBookService.Delete(issuedBook);
+            await _issuedBookService.DeleteAsync(issuedBook);
             return NoContent();
         }
     }

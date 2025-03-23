@@ -51,9 +51,9 @@ namespace BookLibraryClient.Controllers
                 var jsonResponse = await response.Content.ReadAsStringAsync();
                 var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(jsonResponse);
 
-                if (tokenResponse != null && !string.IsNullOrEmpty(tokenResponse.token.result))
+                if (tokenResponse != null && !string.IsNullOrEmpty(tokenResponse.token))
                 {
-                    Response.Cookies.Append("jwt", tokenResponse.token.result, new CookieOptions
+                    Response.Cookies.Append("jwt", tokenResponse.token, new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,
@@ -61,7 +61,7 @@ namespace BookLibraryClient.Controllers
                     });
 
                     var handler = new JwtSecurityTokenHandler();
-                    var jwtToken = handler.ReadJwtToken(tokenResponse.token.result);
+                    var jwtToken = handler.ReadJwtToken(tokenResponse.token);
 
                     var username = jwtToken.Claims.First(claim => claim.Type == "sub").Value;
                     var userId = jwtToken.Claims.First(claim => claim.Type == "jti").Value;
@@ -88,13 +88,8 @@ namespace BookLibraryClient.Controllers
 
         public class TokenResponse
         {
-            public Token token { get; set; }
+            public string token { get; set; }
             public string refreshToken { get; set; }
-        }
-
-        public class Token
-        {
-            public string result { get; set; }
         }
     }
 

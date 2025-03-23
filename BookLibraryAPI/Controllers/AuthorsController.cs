@@ -6,6 +6,7 @@ using AutoMapper;
 using BookLibraryAPI.DTOs.Authors;
 using BookLibraryAPI.DTOs.PagedResult;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -23,17 +24,17 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("all")]
-        public IActionResult GetAllAuthors()
+        public async Task<IActionResult> GetAllAuthors()
         {
-            var authors = _authorService.AllAuthors;
+            var authors = await _authorService.GetAllAuthorsAsync();
             var authorDtos = _mapper.Map<List<AuthorDto>>(authors);
             return Ok(authorDtos);
         }
 
         [HttpGet]
-        public IActionResult GetPagedAuthors(int pageNumber = 1, int pageSize = 10)
+        public async Task<IActionResult> GetPagedAuthors(int pageNumber = 1, int pageSize = 10)
         {
-            var pagedAuthors = _authorService.GetPagedAuthors(pageNumber, pageSize);
+            var pagedAuthors = await _authorService.GetPagedAuthorsAsync(pageNumber, pageSize);
             var authorDtos = _mapper.Map<List<AuthorDto>>(pagedAuthors.Items);
             var pagedAuthorsDto = new PagedAuthorsDto
             {
@@ -45,17 +46,17 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("sorted")]
-        public IActionResult GetSortedAuthors()
+        public async Task<IActionResult> GetSortedAuthors()
         {
-            var authors = _authorService.SortedAuthors;
+            var authors = await _authorService.GetSortedAuthorsAsync();
             var authorDtos = _mapper.Map<List<AuthorDto>>(authors);
             return Ok(authorDtos);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetAuthorById(int id)
+        public async Task<IActionResult> GetAuthorById(int id)
         {
-            var author = _authorService.GetById(id);
+            var author = await _authorService.GetByIdAsync(id);
             if (author == null)
             {
                 return NotFound();
@@ -66,16 +67,16 @@ namespace BookLibraryAPI.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost]
-        public IActionResult CreateAuthor([FromBody] AuthorDto authorDto)
+        public async Task<IActionResult> CreateAuthor([FromBody] AuthorDto authorDto)
         {
             var author = _mapper.Map<Author>(authorDto);
-            _authorService.Create(author);
+            await _authorService.CreateAsync(author);
             return CreatedAtAction(nameof(GetAuthorById), new { id = author.Id }, authorDto);
         }
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPut("{id}")]
-        public IActionResult UpdateAuthor(int id, [FromBody] AuthorDto authorDto)
+        public async Task<IActionResult> UpdateAuthor(int id, [FromBody] AuthorDto authorDto)
         {
             if (id != authorDto.Id)
             {
@@ -83,20 +84,20 @@ namespace BookLibraryAPI.Controllers
             }
 
             var author = _mapper.Map<Author>(authorDto);
-            _authorService.Update(author);
+            await _authorService.UpdateAsync(author);
             return NoContent();
         }
 
         [Authorize(Policy = "AdminOnly")]
         [HttpDelete("{id}")]
-        public IActionResult DeleteAuthor(int id)
+        public async Task<IActionResult> DeleteAuthor(int id)
         {
-            var author = _authorService.GetById(id);
+            var author = await _authorService.GetByIdAsync(id);
             if (author == null)
             {
                 return NotFound();
             }
-            _authorService.Delete(author);
+            await _authorService.DeleteAsync(author);
             return NoContent();
         }
     }

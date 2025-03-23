@@ -1,0 +1,41 @@
+﻿@model BookLibraryClient.DTOs.PagedResults.PagedIssuedBooksDto
+
+@{
+    ViewData["Title"] = "Issued Books";
+}
+
+<h1>Issued Books</h1>
+
+@if (Model.Items.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Book Title</th>
+                <th>Issued Date</th>
+                <th>Return Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var book in Model.Items)
+            {
+                <tr>
+                    <td>@book.Book.Title</td>
+                    <td>@book.Issued.ToShortDateString()</td>
+                    <td>@book.Return.ToShortDateString()</td>
+                    <td>
+                        <form method="post" action="@Url.Action("ReturnBook", new { issuedBookId = book.Id })">
+                            <button type="submit" class="btn btn-danger">Return</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+}
+else
+{
+    <p>No issued books found.</p>
+}

@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using BookLibraryAPI.Interfaces;
+using BookLibraryAPI.Middleware;
 using BookLibraryAPI.Models;
 using BookLibraryAPI.ViewModels;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
-using BookLibraryAPI.Middleware;
 
 namespace BookLibraryAPI.Services
 {
@@ -18,55 +18,60 @@ namespace BookLibraryAPI.Services
             _context = context;
         }
 
-        public PagedList<IssuedBook> GetPagedIssuedBooks(int page, int pageSize)
+        public async Task<PagedList<IssuedBook>> GetPagedIssuedBooksAsync(int page, int pageSize)
         {
             IQueryable<IssuedBook> issuedBooks = _context.IssuedBooks.Include(b => b.Book).Include(b => b.User);
 
-            var totalCount = issuedBooks.Count();
-            var items = issuedBooks.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var totalCount = await issuedBooks.CountAsync();
+            var items = await issuedBooks.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
             return new PagedList<IssuedBook>(items, totalCount, page, pageSize);
         }
 
-        public PagedList<IssuedBook> GetByUser(int userId, int pageNumber, int pageSize)
+        public async Task<PagedList<IssuedBook>> GetByUserAsync(int userId, int pageNumber, int pageSize)
         {
-            var query = _context.IssuedBooks.Include(ib => ib.Book).Include(ib => ib.User)
+            var query = _context.IssuedBooks
+                .Include(ib => ib.Book)
+                    .ThenInclude(b => b.Author)
+                .Include(ib => ib.Book)
+                    .ThenInclude(b => b.Genre)
+                .Include(ib => ib.User)
                 .Where(ib => ib.UserId == userId);
 
-            var totalCount = query.Count();
-            var items = query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+            var totalCount = await query.CountAsync();
+            var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
 
             return new PagedList<IssuedBook>(items, totalCount, pageNumber, pageSize);
         }
 
-        public IssuedBook GetById(int id)
+        public async Task<IssuedBook> GetByIdAsync(int id)
         {
-            return _context.IssuedBooks.Include(ib => ib.Book).Include(ib => ib.User)
-                .FirstOrDefault(ib => ib.Id == id) ??
-                throw new InvalidOperationException($"Issued book with ID {id} not found.");
+            return await _context.IssuedBooks.Include(ib => ib.Book).Include(ib => ib.User)
+                .FirstOrDefaultAsync(ib => ib.Id == id)
+                ?? throw new InvalidOperationException($"Issued book with ID {id} not found.");
         }
 
-        public void Create(IssuedBook issuedBook)
+        public async Task CreateAsync(IssuedBook issuedBook)
         {
-            if(_context.IssuedBooks.Any(b => b.UserId == issuedBook.UserId && b.BookId == issuedBook.BookId))
+            if (await _context.IssuedBooks.AnyAsync(b => b.UserId == issuedBook.UserId && b.BookId == issuedBook.BookId))
             {
                 throw new BookIsAlreadyIssuedException("Вы уже взяли данную книгу.");
             }
 
-            _context.IssuedBooks.Add(issuedBook);
-            _context.SaveChanges();
+            await _context.IssuedBooks.AddAsync(issuedBook);
+            await _context.SaveChangesAsync();
         }
 
-        public void Update(IssuedBook issuedBook)
+        public async Task UpdateAsync(IssuedBook issuedBook)
         {
             _context.IssuedBooks.Update(issuedBook);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public void Delete(IssuedBook issuedBook)
+        public async Task DeleteAsync(IssuedBook issuedBook)
         {
             _context.IssuedBooks.Remove(issuedBook);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
     }
 }

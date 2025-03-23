@@ -1,15 +1,17 @@
-﻿using BookLibraryAPI.Models;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using BookLibraryAPI.Models;
 using BookLibraryAPI.ViewModels;
 
 namespace BookLibraryAPI.Interfaces
 {
     public interface IAllIssuedBooks
     {
-        public PagedList<IssuedBook> GetPagedIssuedBooks(int page, int pageSize);
-        public PagedList<IssuedBook> GetByUser(int userId, int pageNumber, int pageSize);
-        public IssuedBook GetById(int id);
-        public void Create(IssuedBook issuedBook);
-        public void Update(IssuedBook issuedBook);
-        public void Delete(IssuedBook issuedBook);
+        Task<PagedList<IssuedBook>> GetPagedIssuedBooksAsync(int page, int pageSize);
+        Task<PagedList<IssuedBook>> GetByUserAsync(int userId, int pageNumber, int pageSize);
+        Task<IssuedBook> GetByIdAsync(int id);
+        Task CreateAsync(IssuedBook issuedBook);
+        Task UpdateAsync(IssuedBook issuedBook);
+        Task DeleteAsync(IssuedBook issuedBook);
     }
 }

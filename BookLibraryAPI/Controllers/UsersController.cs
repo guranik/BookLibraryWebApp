@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,9 +10,9 @@ using System.Threading.Tasks;
 using BookLibraryAPI.Models;
 using BookLibraryAPI.Services;
 using AutoMapper;
-using Microsoft.AspNetCore.Razor.TagHelpers;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.DTOs.Users;
+using System.Collections.Generic;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -89,20 +90,18 @@ namespace BookLibraryAPI.Controllers
             }
 
             var newToken = GenerateJwtToken(user);
-
             await _refreshTokenService.RevokeRefreshTokenAsync(storedToken);
             var newRefreshToken = _refreshTokenService.CreateRefreshTokenAsync(user.Id);
 
             return Ok(new { Token = newToken, RefreshToken = newRefreshToken.Token });
         }
 
-        private async Task<string> GenerateJwtToken(User user)
+        private string GenerateJwtToken(User user)
         {
             if (user.UserName == null)
                 throw new ArgumentNullException(nameof(user.UserName));
 
-            // Получение ролей пользователя
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = _userManager.GetRolesAsync(user).Result;
 
             var claims = new List<Claim>
             {
@@ -110,7 +109,6 @@ namespace BookLibraryAPI.Controllers
                 new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString())
             };
 
-            // Добавление ролей как утверждений
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
@@ -131,9 +129,9 @@ namespace BookLibraryAPI.Controllers
 
         [Authorize]
         [HttpGet("{id}")]
-        public IActionResult GetUser(int id)
+        public async Task<IActionResult> GetUser(int id)
         {
-            var user = _userService.GetUser(id); // Обновите, если используете AutoMapper здесь
+            var user = await _userService.GetUserAsync(id);
             var userDto = _mapper.Map<UserDto>(user);
             return Ok(userDto);
         }
@@ -148,7 +146,6 @@ namespace BookLibraryAPI.Controllers
     {
         public required string Username { get; set; }
         public required string Password { get; set; }
-
     }
 
     public class RegisterModel

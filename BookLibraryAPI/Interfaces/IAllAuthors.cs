@@ -1,16 +1,18 @@
-﻿using BookLibraryAPI.Models;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using BookLibraryAPI.Models;
 using BookLibraryAPI.ViewModels;
 
 namespace BookLibraryAPI.Interfaces
 {
     public interface IAllAuthors
     {
-        public IEnumerable<Author> AllAuthors { get; }
-        public IEnumerable<Author> SortedAuthors { get; }
-        public PagedList<Author> GetPagedAuthors(int page, int pageSize); 
-        public Author GetById(int id);
-        public void Update(Author author);
-        public void Delete(Author author);
-        public void Create(Author author);
+        Task<IEnumerable<Author>> GetAllAuthorsAsync();
+        Task<IEnumerable<Author>> GetSortedAuthorsAsync();
+        Task<PagedList<Author>> GetPagedAuthorsAsync(int page, int pageSize);
+        Task<Author> GetByIdAsync(int id);
+        Task CreateAsync(Author author);
+        Task UpdateAsync(Author author);
+        Task DeleteAsync(Author author);
     }
 }

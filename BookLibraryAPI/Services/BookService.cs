@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
 using BookLibraryAPI.ViewModels;
 using BookLibraryAPI.Middleware;
 using Microsoft.EntityFrameworkCore;
-
 
 namespace BookLibraryAPI.Services
 {
@@ -17,12 +17,15 @@ namespace BookLibraryAPI.Services
         {
             _context = context;
         }
-        
-        public IEnumerable<Book> AllBooks => _context.Books.Include(b => b.Author).Include(b => b.Genre).ToList();
 
-        public PagedList<Book> GetPagedBooks(string genre, string author, string bookName, int pageNumber, int pageSize)
+        public async Task<IEnumerable<Book>> GetAllBooksAsync()
         {
-            IQueryable<Book> books = _context.Books.Include(b => b.Author).Include(b => b.Genre);
+            return await _context.Books.Include(b => b.Author).Include(b => b.Genre).ToListAsync();
+        }
+
+        public async Task<PagedList<Book>> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize)
+        {
+            IQueryable<Book> books = _context.Books.Where(b => b.BookNumber > 0).Include(b => b.Author).Include(b => b.Genre);
 
             if (!string.IsNullOrEmpty(genre))
             {
@@ -33,7 +36,7 @@ namespace BookLibraryAPI.Services
             {
                 var authorParts = author.Split(' ');
                 string firstName = authorParts[0];
-                string lastName = authorParts[1];
+                string lastName = authorParts.Length > 1 ? authorParts[1] : string.Empty;
 
                 books = books.Where(b =>
                     (b.Author.Name.Contains(firstName) || string.IsNullOrEmpty(firstName)) &&
@@ -45,80 +48,79 @@ namespace BookLibraryAPI.Services
             {
                 books = books.Where(b => b.Title.Equals(bookName));
             }
-
-            var totalCount = books.Count();
-            var items = books.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+            
+            var totalCount = await books.CountAsync();
+            var items = await books.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
 
             return new PagedList<Book>(items, totalCount, pageNumber, pageSize);
         }
 
-        public Book GetById(int id)
+        public async Task<Book> GetByIdAsync(int id)
         {
-            return _context.Books.Include(b => b.Author).Include(b => b.Genre).FirstOrDefault(b => b.Id == id) ??
-                throw new InvalidOperationException($"Book with ID {id} not found.");
+            return await _context.Books.Include(b => b.Author).Include(b => b.Genre).FirstOrDefaultAsync(b => b.Id == id)
+                ?? throw new InvalidOperationException($"Book with ID {id} not found.");
         }
 
-        public Book GetByISBN(string name)
+        public async Task<Book> GetByISBNAsync(string isbn)
         {
-            return _context.Books.Include(b => b.Author).Include(b => b.Genre)
-                .FirstOrDefault(b => b.ISBN.Equals(name));
+            return await _context.Books.Include(b => b.Author).Include(b => b.Genre)
+                .FirstOrDefaultAsync(b => b.ISBN.Equals(isbn));
         }
 
-        public void IssueBook(int bookId)
+        public async Task IssueBookAsync(int bookId)
         {
-            var book = _context.Books.FirstOrDefault(b => b.Id == bookId);
+            var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == bookId);
 
             if (book.BookNumber > 0)
             {
                 book.BookNumber--;
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
             else
             {
-                throw new NoAvailableBooksException($"There is no books \"{book.Title}\" : \"{book.ISBN}\" left.");
+                throw new NoAvailableBooksException($"There are no books \"{book.Title}\" : \"{book.ISBN}\" left.");
             }
         }
 
-        public void ReturnBook(int bookId)
+        public async Task ReturnBookAsync(int bookId)
         {
-            var book = _context.Books.FirstOrDefault(b => b.Id == bookId);
-
+            var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == bookId);
+            if (book != null)
+            {
                 book.BookNumber++;
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
+            }
         }
 
-        public IEnumerable<Book> GetByAuthor(int authorId)
+        public async Task<IEnumerable<Book>> GetByAuthorAsync(int authorId)
         {
-            return _context.Books.Include(b => b.Author).Include(b => b.Genre)
-                .Where(b => b.AuthorId == authorId).ToList();
+            return await _context.Books.Include(b => b.Author).Include(b => b.Genre)
+                .Where(b => b.AuthorId == authorId).ToListAsync();
         }
 
-        public void Update(Book book)
+        public async Task UpdateAsync(Book book)
         {
             _context.Books.Update(book);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public void Delete(Book book)
+        public async Task DeleteAsync(Book book)
         {
             _context.Books.Remove(book);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public void Create(Book book)
+        public async Task CreateAsync(Book book)
         {
-            _context.Books.Add(book);
-            _context.SaveChanges();
+            await _context.Books.AddAsync(book);
+            await _context.SaveChangesAsync();
         }
 
-        public bool AreAllBooksIssued(string title, int authorId)
+        public async Task<bool> AreAllBooksIssuedAsync(string title, string authorName)
         {
-            if(_context.Books.Any(b => b.AuthorId == authorId && b.Title == title))
-                {
-                return _context.Books
-                    .Any(b => b.AuthorId == authorId && b.Title == title && b.BookNumber != 0);
-            }
-            return false;
+            return await _context.Books
+                .Where(b => b.Author.Name + " " + b.Author.Surname == authorName && b.Title == title)
+                .AllAsync(b => b.BookNumber == 0);
         }
     }
 }

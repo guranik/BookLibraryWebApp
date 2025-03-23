@@ -1,13 +1,15 @@
-﻿using BookLibraryAPI.Models;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using BookLibraryAPI.Models;
 
 namespace BookLibraryAPI.Interfaces
 {
     public interface IAllCountries
     {
-        IEnumerable<Country> AllCountries { get; }
-        Country GetById(int id);
-        void Create(Country country);
-        void Update(Country country);
-        void Delete(Country country);
+        Task<IEnumerable<Country>> GetAllCountriesAsync();
+        Task<Country> GetByIdAsync(int id);
+        Task CreateAsync(Country country);
+        Task UpdateAsync(Country country);
+        Task DeleteAsync(Country country);
     }
 }

@@ -1,14 +1,15 @@
-﻿using BookLibraryAPI.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using BookLibraryAPI.Models;
 
 namespace BookLibraryAPI.Services
 {
     public interface IAllGenres
     {
-        IEnumerable<Genre> AllGenres { get; }
-        Genre GetById(int id);
-        void Create(Genre genre);
-        void Update(Genre genre);
-        void Delete(Genre genre);
+        Task<IEnumerable<Genre>> GetAllGenresAsync();
+        Task<Genre> GetByIdAsync(int id);
+        Task CreateAsync(Genre genre);
+        Task UpdateAsync(Genre genre);
+        Task DeleteAsync(Genre genre);
     }
 }

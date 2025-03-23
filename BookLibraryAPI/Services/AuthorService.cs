@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
 using BookLibraryAPI.ViewModels;
 using Microsoft.EntityFrameworkCore;
-using static System.Reflection.Metadata.BlobBuilder;
 
 namespace BookLibraryAPI.Services
 {
@@ -17,46 +17,49 @@ namespace BookLibraryAPI.Services
             _context = context;
         }
 
-        public IEnumerable<Author> AllAuthors => _context.Authors;
+        public async Task<IEnumerable<Author>> GetAllAuthorsAsync()
+            => await _context.Authors.ToListAsync();
 
-        public IEnumerable<Author> SortedAuthors => _context.Authors
-            .Include(a => a.Books)
-            .OrderBy(a => a.Surname)
-            .ThenBy(a => a.Name)
-            .ThenBy(a => a.BirthDate);
+        public async Task<IEnumerable<Author>> GetSortedAuthorsAsync()
+            => await _context.Authors
+                .Include(a => a.Books)
+                .OrderBy(a => a.Surname)
+                .ThenBy(a => a.Name)
+                .ThenBy(a => a.BirthDate)
+                .ToListAsync();
 
-        public PagedList<Author> GetPagedAuthors(int page, int pageSize)
+        public async Task<PagedList<Author>> GetPagedAuthorsAsync(int page, int pageSize)
         {
             IQueryable<Author> authors = _context.Authors.Include(a => a.Country);
 
-            var totalCount = authors.Count();
-            var items = authors.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            var totalCount = await authors.CountAsync();
+            var items = await authors.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
             return new PagedList<Author>(items, totalCount, page, pageSize);
         }
 
-        public Author GetById(int id)
+        public async Task<Author> GetByIdAsync(int id)
         {
-            return _context.Authors.Include(a => a.Books).FirstOrDefault(a => a.Id == id) ??
-                throw new InvalidOperationException($"Автор с ID {id} не найден.");
+            return await _context.Authors.Include(a => a.Books).FirstOrDefaultAsync(a => a.Id == id)
+                ?? throw new InvalidOperationException($"Автор с ID {id} не найден.");
         }
 
-        public void Create(Author author)
+        public async Task CreateAsync(Author author)
         {
-            _context.Authors.Add(author);
-            _context.SaveChanges();
+            await _context.Authors.AddAsync(author);
+            await _context.SaveChangesAsync();
         }
 
-        public void Update(Author author)
+        public async Task UpdateAsync(Author author)
         {
             _context.Authors.Update(author);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public void Delete(Author author)
+        public async Task DeleteAsync(Author author)
         {
             _context.Authors.Remove(author);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
     }
 }

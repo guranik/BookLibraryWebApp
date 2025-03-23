@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
 using Microsoft.EntityFrameworkCore;
@@ -15,30 +15,31 @@ namespace BookLibraryAPI.Services
             _context = context;
         }
 
-        public IEnumerable<Country> AllCountries => _context.Countries;
+        public async Task<IEnumerable<Country>> GetAllCountriesAsync()
+            => await _context.Countries.ToListAsync();
 
-        public Country GetById(int id)
+        public async Task<Country> GetByIdAsync(int id)
         {
-            return _context.Countries.FirstOrDefault(c => c.Id == id) ??
-                throw new InvalidOperationException($"Страна с ID {id} не найдена.");
+            return await _context.Countries.FirstOrDefaultAsync(c => c.Id == id)
+                ?? throw new InvalidOperationException($"Страна с ID {id} не найдена.");
         }
 
-        public void Create(Country country)
+        public async Task CreateAsync(Country country)
         {
-            _context.Countries.Add(country);
-            _context.SaveChanges();
+            await _context.Countries.AddAsync(country);
+            await _context.SaveChangesAsync();
         }
 
-        public void Update(Country country)
+        public async Task UpdateAsync(Country country)
         {
             _context.Countries.Update(country);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public void Delete(Country country)
+        public async Task DeleteAsync(Country country)
         {
             _context.Countries.Remove(country);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
     }
 }

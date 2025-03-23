@@ -5,6 +5,7 @@ using BookLibraryAPI.Models;
 using BookLibraryAPI.DTOs.Genres;
 using AutoMapper;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using BookLibraryAPI.Services;
 
 namespace BookLibraryAPI.Controllers
@@ -23,17 +24,17 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("all")]
-        public IActionResult GetAllGenres()
+        public async Task<IActionResult> GetAllGenres()
         {
-            var genres = _genreService.AllGenres;
+            var genres = await _genreService.GetAllGenresAsync();
             var genreDtos = _mapper.Map<List<GenreDto>>(genres);
             return Ok(genreDtos);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetGenreById(int id)
+        public async Task<IActionResult> GetGenreById(int id)
         {
-            var genre = _genreService.GetById(id);
+            var genre = await _genreService.GetByIdAsync(id);
             if (genre == null)
             {
                 return NotFound();
@@ -44,7 +45,7 @@ namespace BookLibraryAPI.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost]
-        public IActionResult CreateGenre([FromBody] GenreDto genreDto)
+        public async Task<IActionResult> CreateGenre([FromBody] GenreDto genreDto)
         {
             if (genreDto == null)
             {
@@ -52,13 +53,13 @@ namespace BookLibraryAPI.Controllers
             }
 
             var genre = _mapper.Map<Genre>(genreDto);
-            _genreService.Create(genre);
+            await _genreService.CreateAsync(genre);
             return CreatedAtAction(nameof(GetGenreById), new { id = genre.Id }, genreDto);
         }
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPut("{id}")]
-        public IActionResult UpdateGenre(int id, [FromBody] GenreDto genreDto)
+        public async Task<IActionResult> UpdateGenre(int id, [FromBody] GenreDto genreDto)
         {
             if (genreDto == null || genreDto.Id != id)
             {
@@ -66,21 +67,21 @@ namespace BookLibraryAPI.Controllers
             }
 
             var genre = _mapper.Map<Genre>(genreDto);
-            _genreService.Update(genre);
+            await _genreService.UpdateAsync(genre);
             return NoContent();
         }
 
         [Authorize(Policy = "AdminOnly")]
         [HttpDelete("{id}")]
-        public IActionResult DeleteGenre(int id)
+        public async Task<IActionResult> DeleteGenre(int id)
         {
-            var genre = _genreService.GetById(id);
+            var genre = await _genreService.GetByIdAsync(id);
             if (genre == null)
             {
                 return NotFound();
             }
 
-            _genreService.Delete(genre);
+            await _genreService.DeleteAsync(genre);
             return NoContent();
         }
     }
