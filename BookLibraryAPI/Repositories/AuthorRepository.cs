@@ -20,23 +20,6 @@ namespace BookLibraryAPI.Services
         public async Task<IEnumerable<Author>> GetAllAuthorsAsync()
             => await _context.Authors.ToListAsync();
 
-        public async Task<IEnumerable<Author>> GetSortedAuthorsAsync()
-            => await _context.Authors
-                .Include(a => a.Books)
-                .OrderBy(a => a.Surname)
-                .ThenBy(a => a.Name)
-                .ThenBy(a => a.BirthDate)
-                .ToListAsync();
-
-        public async Task<PagedList<Author>> GetPagedAuthorsAsync(int page, int pageSize)
-        {
-            IQueryable<Author> authors = _context.Authors.Include(a => a.Country);
-
-            var totalCount = await authors.CountAsync();
-            var items = await authors.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-
-            return new PagedList<Author>(items, totalCount, page, pageSize);
-        }
 
         public async Task<Author> GetByIdAsync(int id)
         {

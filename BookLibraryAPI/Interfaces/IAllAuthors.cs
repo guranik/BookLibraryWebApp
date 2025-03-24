@@ -8,8 +8,6 @@ namespace BookLibraryAPI.Interfaces
     public interface IAllAuthors
     {
         Task<IEnumerable<Author>> GetAllAuthorsAsync();
-        Task<IEnumerable<Author>> GetSortedAuthorsAsync();
-        Task<PagedList<Author>> GetPagedAuthorsAsync(int page, int pageSize);
         Task<Author> GetByIdAsync(int id);
         Task CreateAsync(Author author);
         Task UpdateAsync(Author author);

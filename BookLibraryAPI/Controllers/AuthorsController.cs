@@ -26,20 +26,6 @@ namespace BookLibraryAPI.Controllers
             return Ok(authorDtos);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetPagedAuthors(int pageNumber = 1, int pageSize = 10)
-        {
-            var pagedAuthorsDto = await _authorService.GetPagedAuthorsAsync(pageNumber, pageSize);
-            return Ok(pagedAuthorsDto);
-        }
-
-        [HttpGet("sorted")]
-        public async Task<IActionResult> GetSortedAuthors()
-        {
-            var authorDtos = await _authorService.GetSortedAuthorsAsync();
-            return Ok(authorDtos);
-        }
-
         [HttpGet("{id}")]
         public async Task<IActionResult> GetAuthorById(int id)
         {

@@ -1,61 +1,122 @@
+п»їusing System.Collections.Generic;
+using System.Threading.Tasks;
+using AutoMapper;
+using BookLibraryAPI.DTOs.Authors;
+using BookLibraryAPI.DTOs.PagedResult;
+using BookLibraryAPI.Interfaces;
 using BookLibraryAPI.Models;
 using BookLibraryAPI.Services;
-using Microsoft.EntityFrameworkCore;
+using Moq;
+using Xunit;
 
-public class AuthorServiceTests
+namespace BookLibraryAPI.Tests.Services
 {
-    private readonly AuthorRepository _service;
-    private readonly DbContextOptions<Db15460Context> _options;
-
-    public AuthorServiceTests()
+    public class AuthorServiceTests
     {
-        // Создание уникальной in-memory базы данных
-        _options = new DbContextOptionsBuilder<Db15460Context>()
-            .UseInMemoryDatabase(databaseName: "TestDatabase")
-            .Options;
+        private readonly Mock<IAllAuthors> _authorRepositoryMock;
+        private readonly IMapper _mapper;
+        private readonly AuthorService _authorService;
 
-        // Инициализация сервиса
-        _service = new AuthorRepository(new Db15460Context(_options));
-    }
-
-    [Fact]
-    public async Task GetByIdAsync_ReturnsAuthor_WhenAuthorExists()
-    {
-        // Подготовка: добавление автора в базу данных
-        using (var context = new Db15460Context(_options))
+        public AuthorServiceTests()
         {
-            var author = new Author { Id = 1, Name = "John", Surname = "Doe" };
-            context.Authors.Add(author);
-            await context.SaveChangesAsync();
+            _authorRepositoryMock = new Mock<IAllAuthors>();
+
+            var mappingConfig = new MapperConfiguration(mc =>
+            {
+                mc.CreateMap<Author, AuthorDto>().ReverseMap();
+            });
+            _mapper = mappingConfig.CreateMapper();
+
+            _authorService = new AuthorService(_authorRepositoryMock.Object, _mapper);
         }
 
-        // Действие: получение автора по ID
-        var result = await _service.GetByIdAsync(1);
-
-        // Проверка: убедитесь, что результат не равен null и совпадает с ожидаемым
-        Assert.NotNull(result);
-        Assert.Equal("John", result.Name);
-        Assert.Equal("Doe", result.Surname);
-    }
-
-    [Fact]
-    public async Task CreateAsync_AddsAuthor()
-    {
-        // Удаление базы данных перед тестом
-        using (var context = new Db15460Context(_options))
+        [Fact]
+        public async Task GetAllAuthorsAsync_ShouldReturnListOfAuthors()
         {
-            context.Database.EnsureDeleted();
-            context.Database.EnsureCreated();
+            // Arrange
+            var authors = new List<Author> { new Author { Id = 1, Name = "Author 1" } };
+            _authorRepositoryMock.Setup(repo => repo.GetAllAuthorsAsync()).ReturnsAsync(authors);
+
+            // Act
+            var result = await _authorService.GetAllAuthorsAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result);
+            Assert.Equal("Author 1", result[0].Name);
         }
 
-        var author = new Author { Id = 2, Name = "Jane", Surname = "Smith" };
-        await _service.CreateAsync(author);
 
-        using (var context = new Db15460Context(_options))
+
+        [Fact]
+        public async Task GetAuthorByIdAsync_ShouldReturnAuthor()
         {
-            var addedAuthor = await context.Authors.FindAsync(2);
-            Assert.NotNull(addedAuthor);
-            Assert.Equal("Jane", addedAuthor.Name);
+            // Arrange
+            var author = new Author { Id = 1, Name = "Author 1" };
+            _authorRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(author);
+
+            // Act
+            var result = await _authorService.GetAuthorByIdAsync(1);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Author 1", result.Name);
+        }
+
+        [Fact]
+        public async Task CreateAuthorAsync_ShouldAddAuthor()
+        {
+            // Arrange
+            var authorDto = new AuthorDto { Name = "Author 1" };
+            _authorRepositoryMock.Setup(repo => repo.CreateAsync(It.IsAny<Author>())).Returns(Task.CompletedTask);
+
+            // Act
+            await _authorService.CreateAuthorAsync(authorDto);
+
+            // Assert
+            _authorRepositoryMock.Verify(repo => repo.CreateAsync(It.IsAny<Author>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateAuthorAsync_ShouldUpdateAuthor()
+        {
+            // Arrange
+            var authorDto = new AuthorDto { Id = 1, Name = "Updated Author" };
+            _authorRepositoryMock.Setup(repo => repo.UpdateAsync(It.IsAny<Author>())).Returns(Task.CompletedTask);
+
+            // Act
+            await _authorService.UpdateAuthorAsync(authorDto);
+
+            // Assert
+            _authorRepositoryMock.Verify(repo => repo.UpdateAsync(It.IsAny<Author>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteAuthorAsync_ShouldDeleteAuthor()
+        {
+            // Arrange
+            var author = new Author { Id = 1, Name = "Author 1" };
+            _authorRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync(author);
+            _authorRepositoryMock.Setup(repo => repo.DeleteAsync(author)).Returns(Task.CompletedTask);
+
+            // Act
+            await _authorService.DeleteAuthorAsync(1);
+
+            // Assert
+            _authorRepositoryMock.Verify(repo => repo.DeleteAsync(author), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteAuthorAsync_ShouldNotDeleteNonExistentAuthor()
+        {
+            // Arrange
+            _authorRepositoryMock.Setup(repo => repo.GetByIdAsync(1)).ReturnsAsync((Author)null);
+
+            // Act
+            await _authorService.DeleteAuthorAsync(1);
+
+            // Assert
+            _authorRepositoryMock.Verify(repo => repo.DeleteAsync(It.IsAny<Author>()), Times.Never);
         }
     }
 }

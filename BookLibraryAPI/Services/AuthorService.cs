@@ -11,8 +11,6 @@ namespace BookLibraryAPI.Services
     public interface IAuthorService
     {
         Task<List<AuthorDto>> GetAllAuthorsAsync();
-        Task<PagedAuthorsDto> GetPagedAuthorsAsync(int pageNumber, int pageSize);
-        Task<List<AuthorDto>> GetSortedAuthorsAsync();
         Task<AuthorDto> GetAuthorByIdAsync(int id);
         Task CreateAuthorAsync(AuthorDto authorDto);
         Task UpdateAuthorAsync(AuthorDto authorDto);
@@ -36,23 +34,6 @@ namespace BookLibraryAPI.Services
             return _mapper.Map<List<AuthorDto>>(authors);
         }
 
-        public async Task<PagedAuthorsDto> GetPagedAuthorsAsync(int pageNumber, int pageSize)
-        {
-            var pagedAuthors = await _authorRepository.GetPagedAuthorsAsync(pageNumber, pageSize);
-            var authorDtos = _mapper.Map<List<AuthorDto>>(pagedAuthors.Items);
-            return new PagedAuthorsDto
-            {
-                Items = authorDtos,
-                TotalPages = pagedAuthors.TotalPages,
-                CurrentPage = pagedAuthors.PageNumber
-            };
-        }
-
-        public async Task<List<AuthorDto>> GetSortedAuthorsAsync()
-        {
-            var authors = await _authorRepository.GetSortedAuthorsAsync();
-            return _mapper.Map<List<AuthorDto>>(authors);
-        }
 
         public async Task<AuthorDto> GetAuthorByIdAsync(int id)
         {
