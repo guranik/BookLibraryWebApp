@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  booklibraryapi:
+    build:
+      context: ./BookLibraryAPI
+      dockerfile: Dockerfile
+    ports:
+      - "5000:80"
+    container_name: booklibraryapi
+
+  booklibraryclient:
+    build:
+      context: ./BookLibraryClient
+      dockerfile: Dockerfile
+    ports:
+      - "5001:80"
+    container_name: booklibraryclient
