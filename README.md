@@ -1,7 +1,7 @@
 Для запуска проекта рекомендуется выполнить этот набор команд в менеджере пакетов VS:
 
 1. Клонировать репозиторий
-git clone https://github.com/guranic/BookLibraryWebApp.git
+git clone https://github.com/guranik/BookLibraryWebApp.git
 
 2. Установить Docker Desktop, выбрать поддержку Windows контейнеров, нажав правой кнопкой мыши по docker в системном трее и
 выбрав "Switch to windows containers"
