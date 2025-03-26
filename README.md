@@ -3,10 +3,8 @@
 1. Клонировать репозиторий
 git clone https://github.com/guranik/BookLibraryWebApp.git
 
-2. Установить Docker Desktop, выбрать поддержку Windows контейнеров, нажав правой кнопкой мыши по docker в системном трее и
-выбрав "Switch to windows containers"
-в случае возникновения ошибок во время процесса включения поддержки открыть PowerShell и выполнить там команду:
-Enable-WindowsOptionalFeature -Online -FeatureName $("Microsoft-Hyper-V", "Containers") -All
+2. Установить Docker Desktop, выбрать поддержку LINUX контейнеров, нажав правой кнопкой мыши по docker в системном трее и
+выбрав "Switch to linux containers"
 
 3. Выполнить команду
 docker-compose up --build
