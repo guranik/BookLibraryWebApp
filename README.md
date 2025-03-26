@@ -10,5 +10,5 @@ git clone https://github.com/guranik/BookLibraryWebApp.git
 docker-compose up --build
 
 4. В браузере API и клиент будут доступны соответственно по ссылкам:
-http://localhost:5000
-http://localhost:5001
+http://localhost:8080
+http://localhost:8081
