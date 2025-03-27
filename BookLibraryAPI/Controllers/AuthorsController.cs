@@ -4,6 +4,7 @@ using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Authors;
 using BookLibraryBusinessLogicClassLibrary.Services;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace BookLibraryAPI.Controllers
@@ -20,16 +21,16 @@ namespace BookLibraryAPI.Controllers
         }
 
         [HttpGet("all")]
-        public async Task<IActionResult> GetAllAuthors()
+        public async Task<IActionResult> GetAllAuthors(CancellationToken cancellationToken)
         {
-            var authorDtos = await _authorService.GetAllAuthorsAsync();
+            var authorDtos = await _authorService.GetAllAuthorsAsync(cancellationToken);
             return Ok(authorDtos);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetAuthorById(int id)
+        public async Task<IActionResult> GetAuthorById(int id, CancellationToken cancellationToken)
         {
-            var authorDto = await _authorService.GetAuthorByIdAsync(id);
+            var authorDto = await _authorService.GetAuthorByIdAsync(id, cancellationToken);
             if (authorDto == null)
             {
                 return NotFound();
@@ -39,30 +40,30 @@ namespace BookLibraryAPI.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost]
-        public async Task<IActionResult> CreateAuthor([FromBody] AuthorDto authorDto)
+        public async Task<IActionResult> CreateAuthor([FromBody] AuthorDto authorDto, CancellationToken cancellationToken)
         {
-            await _authorService.CreateAuthorAsync(authorDto);
+            await _authorService.CreateAuthorAsync(authorDto, cancellationToken);
             return CreatedAtAction(nameof(GetAuthorById), new { id = authorDto.Id }, authorDto);
         }
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateAuthor(int id, [FromBody] AuthorDto authorDto)
+        public async Task<IActionResult> UpdateAuthor(int id, [FromBody] AuthorDto authorDto, CancellationToken cancellationToken)
         {
             if (id != authorDto.Id)
             {
                 return BadRequest("ID из URL не соответствует ID автора.");
             }
 
-            await _authorService.UpdateAuthorAsync(authorDto);
+            await _authorService.UpdateAuthorAsync(authorDto, cancellationToken);
             return NoContent();
         }
 
         [Authorize(Policy = "AdminOnly")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAuthor(int id)
+        public async Task<IActionResult> DeleteAuthor(int id, CancellationToken cancellationToken)
         {
-            await _authorService.DeleteAuthorAsync(id);
+            await _authorService.DeleteAuthorAsync(id, cancellationToken);
             return NoContent();
         }
     }

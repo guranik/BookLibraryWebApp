@@ -5,21 +5,22 @@ using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryDataAccessClassLibrary.Models;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Books;
 using BookLibraryBusinessLogicClassLibrary.DTOs.PagedResult;
+using System.Threading;
 
 namespace BookLibraryBusinessLogicClassLibrary.Services
 {
     public interface IBookService
     {
-        Task<PagedBooksDto> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize);
-        Task<BookInfoDto> GetByIdAsync(int id);
-        Task<Book> GetByISBNAsync(string isbn);
-        Task IssueBookAsync(int bookId, int userId);
-        Task ReturnBookAsync(int issuedBookId);
-        Task CreateAsync(BookInfoDto bookDto);
-        Task UpdateAsync(int id, BookInfoDto bookDto);
-        Task DeleteAsync(int id);
-        Task<bool> AreAllBooksIssuedAsync(string title, string authorName);
-        Task<List<BookDto>> GetByAuthorAsync(int authorId);
+        Task<PagedBooksDto> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize, CancellationToken cancellationToken);
+        Task<BookInfoDto> GetByIdAsync(int id, CancellationToken cancellationToken);
+        Task<Book> GetByISBNAsync(string isbn, CancellationToken cancellationToken);
+        Task IssueBookAsync(int bookId, int userId, CancellationToken cancellationToken);
+        Task ReturnBookAsync(int issuedBookId, CancellationToken cancellationToken);
+        Task CreateAsync(BookInfoDto bookDto, CancellationToken cancellationToken);
+        Task UpdateAsync(int id, BookInfoDto bookDto, CancellationToken cancellationToken);
+        Task DeleteAsync(int id, CancellationToken cancellationToken);
+        Task<bool> AreAllBooksIssuedAsync(string title, string authorName, CancellationToken cancellationToken);
+        Task<List<BookDto>> GetByAuthorAsync(int authorId, CancellationToken cancellationToken);
     }
 
     public class BookService : IBookService
@@ -39,9 +40,9 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             _mapper = mapper;
         }
 
-        public async Task<PagedBooksDto> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize)
+        public async Task<PagedBooksDto> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize, CancellationToken cancellationToken)
         {
-            var pagedBooks = await _bookRepository.GetPagedBooksAsync(genre, author, bookName, pageNumber, pageSize);
+            var pagedBooks = await _bookRepository.GetPagedBooksAsync(genre, author, bookName, pageNumber, pageSize, cancellationToken);
             var bookDtos = _mapper.Map<List<BookDto>>(pagedBooks.Items);
             return new PagedBooksDto
             {
@@ -51,20 +52,20 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             };
         }
 
-        public async Task<BookInfoDto> GetByIdAsync(int id)
+        public async Task<BookInfoDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            var book = await _bookRepository.GetByIdAsync(id);
+            var book = await _bookRepository.GetByIdAsync(id, cancellationToken);
             return _mapper.Map<BookInfoDto>(book);
         }
 
-        public async Task<Book> GetByISBNAsync(string isbn)
+        public async Task<Book> GetByISBNAsync(string isbn, CancellationToken cancellationToken)
         {
-            return await _bookRepository.GetByISBNAsync(isbn);
+            return await _bookRepository.GetByISBNAsync(isbn, cancellationToken);
         }
 
-        public async Task IssueBookAsync(int bookId, int userId)
+        public async Task IssueBookAsync(int bookId, int userId, CancellationToken cancellationToken)
         {
-            await _bookRepository.IssueBookAsync(bookId);
+            await _bookRepository.IssueBookAsync(bookId, cancellationToken);
             var issuedBook = new IssuedBook
             {
                 BookId = bookId,
@@ -74,32 +75,32 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             };
             try
             {
-                await _issuedBookService.CreateAsync(issuedBook);
+                await _issuedBookService.CreateAsync(issuedBook, cancellationToken);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                await _bookRepository.ReturnBookAsync(bookId);
+                await _bookRepository.ReturnBookAsync(bookId, cancellationToken);
             }
         }
 
-        public async Task ReturnBookAsync(int issuedBookId)
+        public async Task ReturnBookAsync(int issuedBookId, CancellationToken cancellationToken)
         {
-            var issuedBook = await _issuedBookService.GetByIdAsync(issuedBookId);
-            await _issuedBookService.DeleteAsync(issuedBook);
-            await _bookRepository.ReturnBookAsync(issuedBookId);
+            var issuedBook = await _issuedBookService.GetByIdAsync(issuedBookId, cancellationToken);
+            await _issuedBookService.DeleteAsync(issuedBook, cancellationToken);
+            await _bookRepository.ReturnBookAsync(issuedBookId, cancellationToken);
         }
 
-        public async Task CreateAsync(BookInfoDto bookDto)
+        public async Task CreateAsync(BookInfoDto bookDto, CancellationToken cancellationToken)
         {
             var book = _mapper.Map<Book>(bookDto);
-            book.Author = await _authorService.GetByIdAsync(bookDto.AuthorId);
-            book.Genre = await _genresService.GetByIdAsync(bookDto.GenreId);
-            await _bookRepository.CreateAsync(book);
+            book.Author = await _authorService.GetByIdAsync(bookDto.AuthorId, cancellationToken);
+            book.Genre = await _genresService.GetByIdAsync(bookDto.GenreId, cancellationToken);
+            await _bookRepository.CreateAsync(book, cancellationToken);
         }
 
-        public async Task UpdateAsync(int id, BookInfoDto bookDto)
+        public async Task UpdateAsync(int id, BookInfoDto bookDto, CancellationToken cancellationToken)
         {
-            var existingBook = await _bookRepository.GetByIdAsync(id);
+            var existingBook = await _bookRepository.GetByIdAsync(id, cancellationToken);
             existingBook.Title = bookDto.Title;
             existingBook.Description = bookDto.Description;
             existingBook.BookNumber = bookDto.BookNumber;
@@ -107,23 +108,23 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             existingBook.AuthorId = bookDto.AuthorId;
             existingBook.GenreId = bookDto.GenreId;
 
-            await _bookRepository.UpdateAsync(existingBook);
+            await _bookRepository.UpdateAsync(existingBook, cancellationToken);
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var book = await _bookRepository.GetByIdAsync(id);
-            await _bookRepository.DeleteAsync(book);
+            var book = await _bookRepository.GetByIdAsync(id, cancellationToken);
+            await _bookRepository.DeleteAsync(book, cancellationToken);
         }
 
-        public async Task<bool> AreAllBooksIssuedAsync(string title, string authorName)
+        public async Task<bool> AreAllBooksIssuedAsync(string title, string authorName, CancellationToken cancellationToken)
         {
-            return await _bookRepository.AreAllBooksIssuedAsync(title, authorName);
+            return await _bookRepository.AreAllBooksIssuedAsync(title, authorName, cancellationToken);
         }
 
-        public async Task<List<BookDto>> GetByAuthorAsync(int authorId)
+        public async Task<List<BookDto>> GetByAuthorAsync(int authorId, CancellationToken cancellationToken)
         {
-            var books = await _bookRepository.GetByAuthorAsync(authorId);
+            var books = await _bookRepository.GetByAuthorAsync(authorId, cancellationToken);
             return _mapper.Map<List<BookDto>>(books);
         }
     }

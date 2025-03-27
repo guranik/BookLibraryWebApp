@@ -17,10 +17,10 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
 {
     public interface IUserService
     {
-        Task<IdentityResult> RegisterUserAsync(RegisterModel registerUserDto);
-        Task<(string Token, string RefreshToken)> LoginUserAsync(LoginModel loginModel);
-        Task<UserDto> GetUserAsync(int id);
-        Task<string> RefreshAccessTokenAsync(string refreshToken);
+        Task<IdentityResult> RegisterUserAsync(RegisterModel registerUserDto, CancellationToken cancellationToken);
+        Task<(string Token, string RefreshToken)> LoginUserAsync(LoginModel loginModel, CancellationToken cancellationToken);
+        Task<UserDto> GetUserAsync(int id, CancellationToken cancellationToken);
+        Task<string> RefreshAccessTokenAsync(string refreshToken, CancellationToken cancellationToken);
     }
 
     public class UserService : IUserService
@@ -38,7 +38,7 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             _configuration = configuration;
         }
 
-        public async Task<IdentityResult> RegisterUserAsync(RegisterModel registerUserDto)
+        public async Task<IdentityResult> RegisterUserAsync(RegisterModel registerUserDto, CancellationToken cancellationToken)
         {
             var user = _mapper.Map<User>(registerUserDto);
             var result = await _userManager.CreateAsync(user, registerUserDto.Password);
@@ -51,23 +51,39 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             return result;
         }
 
-        public async Task<(string Token, string RefreshToken)> LoginUserAsync(LoginModel loginModel)
+        public async Task<(string Token, string RefreshToken)> LoginUserAsync(LoginModel loginModel, CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByNameAsync(loginModel.Username);
             if (user != null && await _userManager.CheckPasswordAsync(user, loginModel.Password))
             {
                 var token = GenerateJwtToken(user);
-                var refreshToken = _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
+                var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id, cancellationToken);
                 return (token, refreshToken.Token);
             }
 
             return (null, null); // Или выбросить исключение, если нужно
         }
 
-        public async Task<UserDto> GetUserAsync(int id)
+        public async Task<UserDto> GetUserAsync(int id, CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
             return _mapper.Map<UserDto>(user);
+        }
+
+        public async Task<string> RefreshAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
+        {
+            // Получаем действующий refresh токен
+            var validRefreshToken = await _refreshTokenRepository.GetValidRefreshTokenAsync(refreshToken, cancellationToken);
+
+            // Генерируем новый access токен
+            var user = await _userManager.FindByIdAsync(validRefreshToken.UserId.ToString());
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found.");
+            }
+
+            var newAccessToken = GenerateJwtToken(user);
+            return newAccessToken;
         }
 
         private string GenerateJwtToken(User user)
@@ -75,10 +91,10 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             var roles = _userManager.GetRolesAsync(user).Result;
 
             var claims = new List<Claim>
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString())
-            };
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+            new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString())
+        };
 
             foreach (var role in roles)
             {
@@ -96,23 +112,6 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        public async Task<string> RefreshAccessTokenAsync(string refreshToken)
-        {
-            // Получаем действующий refresh токен
-            var validRefreshToken = await _refreshTokenRepository.GetValidRefreshTokenAsync(refreshToken);
-
-            // Генерируем новый access токен
-            var user = await _userManager.FindByIdAsync(validRefreshToken.UserId.ToString());
-            if (user == null)
-            {
-                throw new InvalidOperationException("User not found.");
-            }
-
-            var newAccessToken = GenerateJwtToken(user);
-
-            return newAccessToken;
         }
     }
 }

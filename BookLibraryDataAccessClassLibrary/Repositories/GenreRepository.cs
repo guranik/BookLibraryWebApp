@@ -16,21 +16,21 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Genre>> GetAllGenresAsync()
-            => await _context.Genres.ToListAsync();
+        public async Task<IEnumerable<Genre>> GetAllGenresAsync(CancellationToken cancellationToken)
+            => await _context.Genres.ToListAsync(cancellationToken);
 
-        public async Task<Genre> GetByIdAsync(int id)
+        public async Task<Genre> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            return await _context.Genres.Include(g => g.Books).FirstOrDefaultAsync(g => g.Id == id)
+            return await _context.Genres.Include(g => g.Books).FirstOrDefaultAsync(g => g.Id == id, cancellationToken)
                 ?? throw new InvalidOperationException($"Genre with ID {id} not found.");
         }
 
-        public async Task CreateAsync(Genre genre)
+        public async Task CreateAsync(Genre genre, CancellationToken cancellationToken)
         {
-            if (!await GenreExistsAsync(genre))
+            if (!await GenreExistsAsync(genre, cancellationToken))
             {
-                await _context.Genres.AddAsync(genre);
-                await _context.SaveChangesAsync();
+                await _context.Genres.AddAsync(genre, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
             }
             else
             {
@@ -38,15 +38,15 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             }
         }
 
-        public async Task UpdateAsync(Genre genre)
+        public async Task UpdateAsync(Genre genre, CancellationToken cancellationToken)
         {
-            var existingGenre = await GetByIdAsync(genre.Id);
+            var existingGenre = await GetByIdAsync(genre.Id, cancellationToken);
             if (existingGenre != null)
             {
                 existingGenre.Name = genre.Name;
 
                 _context.Genres.Update(existingGenre);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
             else
             {
@@ -54,13 +54,13 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             }
         }
 
-        public async Task DeleteAsync(Genre genre)
+        public async Task DeleteAsync(Genre genre, CancellationToken cancellationToken)
         {
-            var existingGenre = await GetByIdAsync(genre.Id);
+            var existingGenre = await GetByIdAsync(genre.Id, cancellationToken);
             if (existingGenre != null)
             {
                 _context.Genres.Remove(existingGenre);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
             else
             {
@@ -68,9 +68,9 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             }
         }
 
-        private async Task<bool> GenreExistsAsync(Genre genre)
+        private async Task<bool> GenreExistsAsync(Genre genre, CancellationToken cancellationToken)
         {
-            return await _context.Genres.AnyAsync(g => g.Name == genre.Name);
+            return await _context.Genres.AnyAsync(g => g.Name == genre.Name, cancellationToken);
         }
     }
 }

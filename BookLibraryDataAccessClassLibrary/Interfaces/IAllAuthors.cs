@@ -7,10 +7,10 @@ namespace BookLibraryDataAccessClassLibrary.Interfaces
 {
     public interface IAllAuthors
     {
-        Task<IEnumerable<Author>> GetAllAuthorsAsync();
-        Task<Author> GetByIdAsync(int id);
-        Task CreateAsync(Author author);
-        Task UpdateAsync(Author author);
-        Task DeleteAsync(Author author);
+        Task<IEnumerable<Author>> GetAllAuthorsAsync(CancellationToken cancellationToken);
+        Task<Author> GetByIdAsync(int id, CancellationToken cancellationToken);
+        Task CreateAsync(Author author, CancellationToken cancellationToken);
+        Task UpdateAsync(Author author, CancellationToken cancellationToken);
+        Task DeleteAsync(Author author, CancellationToken cancellationToken);
     }
 }

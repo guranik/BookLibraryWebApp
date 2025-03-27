@@ -6,10 +6,10 @@ namespace BookLibraryDataAccessClassLibrary.Interfaces
 {
     public interface IAllUsers
     {
-        Task<IEnumerable<User>> GetAllUsersAsync();
-        Task<User> GetUserAsync(int id);
-        Task CreateAsync(User user);
-        Task UpdateAsync(User user);
-        Task DeleteAsync(User user);
+        Task<IEnumerable<User>> GetAllUsersAsync(CancellationToken cancellationToken);
+        Task<User> GetUserAsync(int id, CancellationToken cancellationToken);
+        Task CreateAsync(User user, CancellationToken cancellationToken);
+        Task UpdateAsync(User user, CancellationToken cancellationToken);
+        Task DeleteAsync(User user, CancellationToken cancellationToken);
     }
 }

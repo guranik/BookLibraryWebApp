@@ -16,21 +16,21 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Country>> GetAllCountriesAsync()
-            => await _context.Countries.ToListAsync();
+        public async Task<IEnumerable<Country>> GetAllCountriesAsync(CancellationToken cancellationToken)
+            => await _context.Countries.ToListAsync(cancellationToken);
 
-        public async Task<Country> GetByIdAsync(int id)
+        public async Task<Country> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            return await _context.Countries.FirstOrDefaultAsync(c => c.Id == id)
+            return await _context.Countries.FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
                 ?? throw new InvalidOperationException($"Страна с ID {id} не найдена.");
         }
 
-        public async Task CreateAsync(Country country)
+        public async Task CreateAsync(Country country, CancellationToken cancellationToken)
         {
-            if (!await CountryExistsAsync(country))
+            if (!await CountryExistsAsync(country, cancellationToken))
             {
-                await _context.Countries.AddAsync(country);
-                await _context.SaveChangesAsync();
+                await _context.Countries.AddAsync(country, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
             }
             else
             {
@@ -38,15 +38,15 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             }
         }
 
-        public async Task UpdateAsync(Country country)
+        public async Task UpdateAsync(Country country, CancellationToken cancellationToken)
         {
-            var existingCountry = await GetByIdAsync(country.Id);
+            var existingCountry = await GetByIdAsync(country.Id, cancellationToken);
             if (existingCountry != null)
             {
                 existingCountry.Name = country.Name;
 
                 _context.Countries.Update(existingCountry);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
             else
             {
@@ -54,13 +54,13 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             }
         }
 
-        public async Task DeleteAsync(Country country)
+        public async Task DeleteAsync(Country country, CancellationToken cancellationToken)
         {
-            var existingCountry = await GetByIdAsync(country.Id);
+            var existingCountry = await GetByIdAsync(country.Id, cancellationToken);
             if (existingCountry != null)
             {
                 _context.Countries.Remove(existingCountry);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
             else
             {
@@ -68,9 +68,9 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             }
         }
 
-        private async Task<bool> CountryExistsAsync(Country country)
+        private async Task<bool> CountryExistsAsync(Country country, CancellationToken cancellationToken)
         {
-            return await _context.Countries.AnyAsync(c => c.Name == country.Name);
+            return await _context.Countries.AnyAsync(c => c.Name == country.Name, cancellationToken);
         }
     }
 }
