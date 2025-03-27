@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using BookLibraryAPI.Interfaces;
-using BookLibraryAPI.DTOs.Genres;
+using BookLibraryDataAccessClassLibrary.Interfaces;
+using BookLibraryBusinessLogicClassLibrary.DTOs.Genres;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using BookLibraryAPI.Services;
+using BookLibraryBusinessLogicClassLibrary.Services;
 
 namespace BookLibraryAPI.Controllers
 {

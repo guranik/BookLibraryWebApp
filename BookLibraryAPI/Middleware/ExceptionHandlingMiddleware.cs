@@ -1,4 +1,4 @@
-﻿using BookLibraryAPI.DTOs.Errors;
+﻿using BookLibraryBusinessLogicClassLibrary.DTOs.Errors;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

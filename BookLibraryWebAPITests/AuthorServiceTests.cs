@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoMapper;
-using BookLibraryAPI.DTOs.Authors;
-using BookLibraryAPI.DTOs.PagedResult;
-using BookLibraryAPI.Interfaces;
-using BookLibraryAPI.Models;
-using BookLibraryAPI.Services;
+using BookLibraryBusinessLogicClassLibrary.DTOs.Authors;
+using BookLibraryBusinessLogicClassLibrary.DTOs.PagedResult;
+using BookLibraryDataAccessClassLibrary.Interfaces;
+using BookLibraryDataAccessClassLibrary.Models;
+using BookLibraryBusinessLogicClassLibrary.Services;
 using Moq;
 using Xunit;
 
-namespace BookLibraryAPI.Tests.Services
+namespace BookLubraryServiceTests
 {
     public class AuthorServiceTests
     {

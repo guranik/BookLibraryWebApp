@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using BookLibraryAPI.Interfaces;
-using BookLibraryAPI.DTOs.Authors;
-using BookLibraryAPI.Services;
+using BookLibraryDataAccessClassLibrary.Interfaces;
+using BookLibraryBusinessLogicClassLibrary.DTOs.Authors;
+using BookLibraryBusinessLogicClassLibrary.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

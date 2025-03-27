@@ -18,6 +18,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Элементы решен
 		Dockerfile = Dockerfile
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookLibraryBusinessLogicClassLibrary", "BookLibraryBusinessLogicClassLibrary\BookLibraryBusinessLogicClassLibrary.csproj", "{FE01F52E-6592-4301-B208-266FAAEA5CC7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookLibraryDataAccessClassLibrary", "BookLibraryDataAccessClassLibrary\BookLibraryDataAccessClassLibrary.csproj", "{71FA30C5-3EE2-414B-8196-6B3E1FBAFE38}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +40,14 @@ Global
 		{D2437300-1590-4313-9206-503BA1E42A2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2437300-1590-4313-9206-503BA1E42A2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2437300-1590-4313-9206-503BA1E42A2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE01F52E-6592-4301-B208-266FAAEA5CC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE01F52E-6592-4301-B208-266FAAEA5CC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE01F52E-6592-4301-B208-266FAAEA5CC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE01F52E-6592-4301-B208-266FAAEA5CC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71FA30C5-3EE2-414B-8196-6B3E1FBAFE38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71FA30C5-3EE2-414B-8196-6B3E1FBAFE38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71FA30C5-3EE2-414B-8196-6B3E1FBAFE38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71FA30C5-3EE2-414B-8196-6B3E1FBAFE38}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,7 +1,9 @@
-using BookLibraryAPI.Models;
-using BookLibraryAPI.Services;
+using BookLibraryBusinessLogicClassLibrary.Services;
+using BookLibraryDataAccessClassLibrary.Repositories;
+using BookLibraryDataAccessClassLibrary.Models;
 using Microsoft.EntityFrameworkCore;
 
+namespace BookLubraryRepositoryTests;
 public class AuthorRepositoryTests
 {
     private readonly AuthorRepository _service;

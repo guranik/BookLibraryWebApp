@@ -1,7 +1,10 @@
-using BookLibraryAPI.Interfaces;
+using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryAPI.Middleware;
-using BookLibraryAPI.Models;
-using BookLibraryAPI.Services;
+using BookLibraryDataAccessClassLibrary.Models;
+using BookLibraryDataAccessClassLibrary.Repositories;
+using BookLibraryDataAccessClassLibrary.Data;
+using BookLibraryBusinessLogicClassLibrary.Services;
+using BookLibraryBusinessLogicClassLibrary.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -93,7 +96,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddScoped<RefreshTokenService>();
+builder.Services.AddScoped<RefreshTokenRepository>();
 builder.Services.AddScoped<IAllUsers,UserRepository>();
 builder.Services.AddScoped<IAllBooks,BookRepository>();
 builder.Services.AddScoped<IAllCountries,CountryRepository>();
@@ -110,9 +113,11 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<Db15460Context>();
-    DbInitializer.Initialize(dbContext);
     var services = scope.ServiceProvider;
+    var dbContext = scope.ServiceProvider.GetRequiredService<Db15460Context>();
+
+    var dbInitializer = services.GetRequiredService<IDbInitializer>();
+    dbInitializer.Initialize(dbContext);
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole<int>>>();
     var userManager = services.GetRequiredService<UserManager<User>>();
 

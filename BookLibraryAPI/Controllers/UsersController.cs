@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
-using BookLibraryAPI.DTOs.Users;
-using BookLibraryAPI.Interfaces;
-using BookLibraryAPI.Services;
+using BookLibraryBusinessLogicClassLibrary.DTOs.Users;
+using BookLibraryDataAccessClassLibrary.Interfaces;
+using BookLibraryBusinessLogicClassLibrary.Services;
+using BookLibraryBusinessLogicClassLibrary.DTOs.Authentication;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -63,23 +64,5 @@ namespace BookLibraryAPI.Controllers
             var newAccessToken = await _userService.RefreshAccessTokenAsync(refreshTokenModel.RefreshToken);
             return Ok(new { Token = newAccessToken });
         }
-    }
-
-    public class RefreshTokenModel
-    {
-        public required string RefreshToken { get; set; }
-    }
-
-    public class LoginModel
-    {
-        public required string Username { get; set; }
-        public required string Password { get; set; }
-    }
-
-    public class RegisterModel
-    {
-        public required string Login { get; set; }
-        public required string Password { get; set; }
-        public required string Role { get; set; }
     }
 }
