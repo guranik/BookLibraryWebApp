@@ -18,6 +18,7 @@ namespace BookLibraryAPI.Controllers
             _issuedBookService = issuedBookService;
         }
 
+        [Authorize]
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUser(int userId, int pageNumber = 1, int pageSize = 10)
         {

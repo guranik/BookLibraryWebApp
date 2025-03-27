@@ -1,15 +1,5 @@
-version: '3.8'
-
 services:
-  db:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    environment:
-      - SA_PASSWORD=YourStrong!Passw0rd
-      - ACCEPT_EULA=Y
-    ports:
-      - "1433:1433"
-    volumes:
-      - dbdata:/var/opt/mssql
+  
 
   booklibraryapi:
     build:
@@ -17,7 +7,7 @@ services:
       dockerfile: Dockerfile
       target: final-api
     ports:
-      - "8080:8080"
+      - "5000:80"
     depends_on:
       - db
   
@@ -27,7 +17,7 @@ services:
       dockerfile: Dockerfile
       target: final-client
     ports:
-      - "8081:8081"
+      - "5001:80"
 
   booklibraryapitests:
     build:
@@ -36,6 +26,16 @@ services:
       target: run-tests
     depends_on:
       - booklibraryapi
+
+  db:
+    image: mcr.microsoft.com/mssql/server
+    environment:
+      - SA_PASSWORD=YourStrong!Passw0rd
+      - ACCEPT_EULA=Y
+    ports:
+      - "1433:1433"
+    volumes:
+      - dbdata:/var/opt/mssql
 
 volumes:
   dbdata:

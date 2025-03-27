@@ -59,6 +59,12 @@ namespace BookLibraryClient.Controllers
                         Secure = true,
                         SameSite = SameSiteMode.Strict
                     });
+                    Response.Cookies.Append("refreshToken", tokenResponse.refreshToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict
+                    });
 
                     var handler = new JwtSecurityTokenHandler();
                     var jwtToken = handler.ReadJwtToken(tokenResponse.token);

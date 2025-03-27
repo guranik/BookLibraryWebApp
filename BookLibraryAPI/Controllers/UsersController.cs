@@ -56,6 +56,13 @@ namespace BookLibraryAPI.Controllers
             }
             return Ok(userDto);
         }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenModel refreshTokenModel)
+        {
+            var newAccessToken = await _userService.RefreshAccessTokenAsync(refreshTokenModel.RefreshToken);
+            return Ok(new { Token = newAccessToken });
+        }
     }
 
     public class RefreshTokenModel

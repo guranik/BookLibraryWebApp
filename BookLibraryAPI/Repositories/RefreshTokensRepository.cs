@@ -4,13 +4,13 @@ using System;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
-namespace BookLibraryAPI.Services
+namespace BookLibraryAPI.Repositories
 {
-    public class RefreshTokenService
+    public class RefreshTokenRepository
     {
         private readonly Db15460Context _context;
 
-        public RefreshTokenService(Db15460Context context)
+        public RefreshTokenRepository(Db15460Context context)
         {
             _context = context;
         }

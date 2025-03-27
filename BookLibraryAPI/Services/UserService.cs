@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using BookLibraryAPI.Controllers;
+using BookLibraryAPI.Repositories;
 
 namespace BookLibraryAPI.Services
 {
@@ -19,20 +20,21 @@ namespace BookLibraryAPI.Services
         Task<IdentityResult> RegisterUserAsync(RegisterModel registerUserDto);
         Task<(string Token, string RefreshToken)> LoginUserAsync(LoginModel loginModel);
         Task<UserDto> GetUserAsync(int id);
+        Task<string> RefreshAccessTokenAsync(string refreshToken);
     }
 
     public class UserService : IUserService
     {
         private readonly UserManager<User> _userManager;
         private readonly IMapper _mapper;
-        private readonly RefreshTokenService _refreshTokenService;
+        private readonly RefreshTokenRepository _refreshTokenRepository;
         private readonly IConfiguration _configuration;
 
-        public UserService(UserManager<User> userManager, IMapper mapper, RefreshTokenService refreshTokenService, IConfiguration configuration)
+        public UserService(UserManager<User> userManager, IMapper mapper, RefreshTokenRepository refreshTokenRepository, IConfiguration configuration)
         {
             _userManager = userManager;
             _mapper = mapper;
-            _refreshTokenService = refreshTokenService;
+            _refreshTokenRepository = refreshTokenRepository;
             _configuration = configuration;
         }
 
@@ -55,7 +57,7 @@ namespace BookLibraryAPI.Services
             if (user != null && await _userManager.CheckPasswordAsync(user, loginModel.Password))
             {
                 var token = GenerateJwtToken(user);
-                var refreshToken = _refreshTokenService.CreateRefreshTokenAsync(user.Id);
+                var refreshToken = _refreshTokenRepository.CreateRefreshTokenAsync(user.Id);
                 return (token, refreshToken.Token);
             }
 
@@ -94,6 +96,23 @@ namespace BookLibraryAPI.Services
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        public async Task<string> RefreshAccessTokenAsync(string refreshToken)
+        {
+            // Получаем действующий refresh токен
+            var validRefreshToken = await _refreshTokenRepository.GetValidRefreshTokenAsync(refreshToken);
+
+            // Генерируем новый access токен
+            var user = await _userManager.FindByIdAsync(validRefreshToken.UserId.ToString());
+            if (user == null)
+            {
+                throw new InvalidOperationException("User not found.");
+            }
+
+            var newAccessToken = GenerateJwtToken(user);
+
+            return newAccessToken;
         }
     }
 }

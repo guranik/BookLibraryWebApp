@@ -58,16 +58,8 @@ namespace BookLibraryAPI.Controllers
             {
                 return BadRequest("Country data is invalid.");
             }
-
-            try
-            {
-                await _countryService.UpdateCountryAsync(countryDto);
-                return NoContent();
-            }
-            catch (InvalidOperationException)
-            {
-                return NotFound();
-            }
+            await _countryService.UpdateCountryAsync(countryDto);
+            return NoContent();
         }
 
         [Authorize(Policy = "AdminOnly")]

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using BookLibraryClient.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient("BookLibraryAPI", client =>
 {
-    client.BaseAddress = new Uri("https://localhost:7212/api/");
+    client.BaseAddress = new Uri("https://localhost:8080/api/");
 });
 builder.Services.AddRazorPages();
 
@@ -25,6 +26,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 var app = builder.Build();
 
+app.UseMiddleware<TokenRefreshMiddleware>();
 // Configure the HTTP request pipeline
 if (!app.Environment.IsDevelopment())
 {
