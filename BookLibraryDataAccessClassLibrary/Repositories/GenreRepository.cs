@@ -27,20 +27,50 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
 
         public async Task CreateAsync(Genre genre)
         {
-            await _context.Genres.AddAsync(genre);
-            await _context.SaveChangesAsync();
+            if (!await GenreExistsAsync(genre))
+            {
+                await _context.Genres.AddAsync(genre);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException("Genre with this name already exists.");
+            }
         }
 
         public async Task UpdateAsync(Genre genre)
         {
-            _context.Genres.Update(genre);
-            await _context.SaveChangesAsync();
+            var existingGenre = await GetByIdAsync(genre.Id);
+            if (existingGenre != null)
+            {
+                existingGenre.Name = genre.Name;
+
+                _context.Genres.Update(existingGenre);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException($"Genre with ID {genre.Id} not found.");
+            }
         }
 
         public async Task DeleteAsync(Genre genre)
         {
-            _context.Genres.Remove(genre);
-            await _context.SaveChangesAsync();
+            var existingGenre = await GetByIdAsync(genre.Id);
+            if (existingGenre != null)
+            {
+                _context.Genres.Remove(existingGenre);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException($"Genre with ID {genre.Id} not found.");
+            }
+        }
+
+        private async Task<bool> GenreExistsAsync(Genre genre)
+        {
+            return await _context.Genres.AnyAsync(g => g.Name == genre.Name);
         }
     }
 }

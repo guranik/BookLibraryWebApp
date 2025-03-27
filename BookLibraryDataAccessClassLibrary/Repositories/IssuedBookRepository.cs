@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryDataAccessClassLibrary.Exceptions;
 using BookLibraryDataAccessClassLibrary.Models;
-using BookLibraryDataAccessClassLibrary.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using BookLibraryDataAccessClassLibrary.ViewModels;
 
 namespace BookLibraryDataAccessClassLibrary.Repositories
 {
@@ -64,14 +64,35 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
 
         public async Task UpdateAsync(IssuedBook issuedBook)
         {
-            _context.IssuedBooks.Update(issuedBook);
-            await _context.SaveChangesAsync();
+            var existingIssuedBook = await GetByIdAsync(issuedBook.Id);
+            if (existingIssuedBook != null)
+            {
+                existingIssuedBook.BookId = issuedBook.BookId;
+                existingIssuedBook.UserId = issuedBook.UserId;
+                existingIssuedBook.Issued = issuedBook.Issued;
+                existingIssuedBook.Return = issuedBook.Return;
+
+                _context.IssuedBooks.Update(existingIssuedBook);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException($"Issued book with ID {issuedBook.Id} not found.");
+            }
         }
 
         public async Task DeleteAsync(IssuedBook issuedBook)
         {
-            _context.IssuedBooks.Remove(issuedBook);
-            await _context.SaveChangesAsync();
+            var existingIssuedBook = await GetByIdAsync(issuedBook.Id);
+            if (existingIssuedBook != null)
+            {
+                _context.IssuedBooks.Remove(existingIssuedBook);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException($"Issued book with ID {issuedBook.Id} not found.");
+            }
         }
     }
 }

@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryDataAccessClassLibrary.Models;
-using BookLibraryDataAccessClassLibrary.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookLibraryDataAccessClassLibrary.Repositories
@@ -20,7 +19,6 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
         public async Task<IEnumerable<Author>> GetAllAuthorsAsync()
             => await _context.Authors.ToListAsync();
 
-
         public async Task<Author> GetByIdAsync(int id)
         {
             return await _context.Authors.Include(a => a.Books).FirstOrDefaultAsync(a => a.Id == id)
@@ -29,20 +27,58 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
 
         public async Task CreateAsync(Author author)
         {
-            await _context.Authors.AddAsync(author);
-            await _context.SaveChangesAsync();
+            if (!await AuthorExistsAsync(author))
+            {
+                await _context.Authors.AddAsync(author);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException("Автор с такими данными уже существует.");
+            }
         }
 
         public async Task UpdateAsync(Author author)
         {
-            _context.Authors.Update(author);
-            await _context.SaveChangesAsync();
+            var existingAuthor = await GetByIdAsync(author.Id);
+            if (existingAuthor != null)
+            {
+                existingAuthor.Name = author.Name;
+                existingAuthor.Surname = author.Surname;
+                existingAuthor.BirthDate = author.BirthDate;
+                existingAuthor.CountryId = author.CountryId;
+
+                _context.Authors.Update(existingAuthor);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException($"Автор с ID {author.Id} не найден.");
+            }
         }
 
         public async Task DeleteAsync(Author author)
         {
-            _context.Authors.Remove(author);
-            await _context.SaveChangesAsync();
+            var existingAuthor = await GetByIdAsync(author.Id);
+            if (existingAuthor != null)
+            {
+                _context.Authors.Remove(existingAuthor);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException($"Автор с ID {author.Id} не найден.");
+            }
+        }
+
+        private async Task<bool> AuthorExistsAsync(Author author)
+        {
+            return await _context.Authors.AnyAsync(a =>
+                a.Id == author.Id ||
+                (a.Name == author.Name &&
+                 a.Surname == author.Surname &&
+                 a.BirthDate == author.BirthDate &&
+                 a.CountryId == author.CountryId));
         }
     }
 }

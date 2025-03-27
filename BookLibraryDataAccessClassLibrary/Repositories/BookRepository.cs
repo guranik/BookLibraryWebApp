@@ -6,7 +6,6 @@ using BookLibraryDataAccessClassLibrary.Models;
 using BookLibraryDataAccessClassLibrary.ViewModels;
 using BookLibraryDataAccessClassLibrary.Exceptions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace BookLibraryDataAccessClassLibrary.Repositories
 {
@@ -49,7 +48,7 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             {
                 books = books.Where(b => b.Title.Equals(bookName));
             }
-            
+
             var totalCount = await books.CountAsync();
             var items = await books.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
 
@@ -70,7 +69,7 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
 
         public async Task IssueBookAsync(int bookId)
         {
-            var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == bookId);
+            var book = await GetByIdAsync(bookId);
 
             if (book.BookNumber > 0)
             {
@@ -85,7 +84,7 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
 
         public async Task ReturnBookAsync(int bookId)
         {
-            var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == bookId);
+            var book = await GetByIdAsync(bookId);
             if (book != null)
             {
                 book.BookNumber++;
@@ -101,25 +100,43 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
 
         public async Task UpdateAsync(Book book)
         {
+            if (await _context.Books.AnyAsync(b => b.ISBN == book.ISBN && b.Id != book.Id))
+            {
+                throw new InvalidOperationException("A book with the same ISBN already exists.");
+            }
+
             _context.Books.Update(book);
             await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(Book book)
         {
-            _context.Books.Remove(book);
-            await _context.SaveChangesAsync();
+            var existingBook = await GetByIdAsync(book.Id);
+            if (existingBook != null)
+            {
+                _context.Books.Remove(existingBook);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException($"Book with ID {book.Id} not found.");
+            }
         }
 
         public async Task CreateAsync(Book book)
         {
+            if (await _context.Books.AnyAsync(b => b.ISBN == book.ISBN))
+            {
+                throw new InvalidOperationException("A book with this ISBN already exists.");
+            }
+
             await _context.Books.AddAsync(book);
             await _context.SaveChangesAsync();
         }
 
         public async Task<bool> AreAllBooksIssuedAsync(string title, string authorName)
         {
-            if(string.IsNullOrEmpty(authorName) || string.IsNullOrEmpty(title))
+            if (string.IsNullOrEmpty(authorName) || string.IsNullOrEmpty(title))
             {
                 return false;
             }
