@@ -11,18 +11,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Authentication;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
+using BookLibraryBusinessLogicClassLibrary.Exceptions;
 using BookLibraryDataAccessClassLibrary.Repositories;
 
 namespace BookLibraryBusinessLogicClassLibrary.Services
 {
-    public interface IUserService
-    {
-        Task<IdentityResult> RegisterUserAsync(RegisterModel registerUserDto, CancellationToken cancellationToken);
-        Task<(string Token, string RefreshToken)> LoginUserAsync(LoginModel loginModel, CancellationToken cancellationToken);
-        Task<UserDto> GetUserAsync(int id, CancellationToken cancellationToken);
-        Task<string> RefreshAccessTokenAsync(string refreshToken, CancellationToken cancellationToken);
-    }
-
     public class UserService : IUserService
     {
         private readonly UserManager<User> _userManager;
@@ -43,47 +37,56 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             var user = _mapper.Map<User>(registerUserDto);
             var result = await _userManager.CreateAsync(user, registerUserDto.Password);
 
-            if (result.Succeeded && !string.IsNullOrEmpty(registerUserDto.Role))
+            if (!result.Succeeded)
+            {
+                throw new BadRequestException(string.Join(", ", result.Errors));
+            }
+
+            if (!string.IsNullOrEmpty(registerUserDto.Role))
             {
                 await _userManager.AddToRoleAsync(user, registerUserDto.Role);
             }
-
             return result;
         }
 
         public async Task<(string Token, string RefreshToken)> LoginUserAsync(LoginModel loginModel, CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByNameAsync(loginModel.Username);
-            if (user != null && await _userManager.CheckPasswordAsync(user, loginModel.Password))
+            if (user == null || !await _userManager.CheckPasswordAsync(user, loginModel.Password))
             {
-                var token = GenerateJwtToken(user);
-                var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id, cancellationToken);
-                return (token, refreshToken.Token);
+                throw new BadRequestException("Invalid username or password.");
             }
 
-            return (null, null); // Или выбросить исключение, если нужно
+            var token = GenerateJwtToken(user);
+            var refreshToken = await _refreshTokenRepository.CreateRefreshTokenAsync(user.Id, cancellationToken);
+            return (token, refreshToken.Token);
         }
 
         public async Task<UserDto> GetUserAsync(int id, CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user == null)
+            {
+                throw new NotFoundException($"User with ID {id} not found.");
+            }
             return _mapper.Map<UserDto>(user);
         }
 
         public async Task<string> RefreshAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
         {
-            // Получаем действующий refresh токен
             var validRefreshToken = await _refreshTokenRepository.GetValidRefreshTokenAsync(refreshToken, cancellationToken);
+            if (validRefreshToken == null)
+            {
+                throw new BadRequestException("Invalid refresh token.");
+            }
 
-            // Генерируем новый access токен
             var user = await _userManager.FindByIdAsync(validRefreshToken.UserId.ToString());
             if (user == null)
             {
                 throw new InvalidOperationException("User not found.");
             }
 
-            var newAccessToken = GenerateJwtToken(user);
-            return newAccessToken;
+            return GenerateJwtToken(user);
         }
 
         private string GenerateJwtToken(User user)
@@ -91,10 +94,10 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             var roles = _userManager.GetRolesAsync(user).Result;
 
             var claims = new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-            new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString())
-        };
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Jti, user.Id.ToString())
+            };
 
             foreach (var role in roles)
             {

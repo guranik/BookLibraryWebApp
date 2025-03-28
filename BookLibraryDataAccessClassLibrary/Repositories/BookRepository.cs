@@ -1,13 +1,11 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryDataAccessClassLibrary.Models;
 using BookLibraryDataAccessClassLibrary.ViewModels;
-using BookLibraryDataAccessClassLibrary.Exceptions;
 using Microsoft.EntityFrameworkCore;
-using System.Threading;
 
 namespace BookLibraryDataAccessClassLibrary.Repositories
 {
@@ -59,8 +57,7 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
 
         public async Task<Book> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            return await _context.Books.Include(b => b.Author).Include(b => b.Genre).FirstOrDefaultAsync(b => b.Id == id, cancellationToken)
-                ?? throw new InvalidOperationException($"Book with ID {id} not found.");
+            return await _context.Books.Include(b => b.Author).Include(b => b.Genre).FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
         }
 
         public async Task<Book> GetByISBNAsync(string isbn, CancellationToken cancellationToken)
@@ -72,26 +69,15 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
         public async Task IssueBookAsync(int bookId, CancellationToken cancellationToken)
         {
             var book = await GetByIdAsync(bookId, cancellationToken);
-
-            if (book.BookNumber > 0)
-            {
-                book.BookNumber--;
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            else
-            {
-                throw new NoAvailableBooksException($"There are no books \"{book.Title}\" : \"{book.ISBN}\" left.");
-            }
+            book.BookNumber--;
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task ReturnBookAsync(int bookId, CancellationToken cancellationToken)
         {
             var book = await GetByIdAsync(bookId, cancellationToken);
-            if (book != null)
-            {
-                book.BookNumber++;
-                await _context.SaveChangesAsync(cancellationToken);
-            }
+            book.BookNumber++;
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<Book>> GetByAuthorAsync(int authorId, CancellationToken cancellationToken)
@@ -102,11 +88,6 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
 
         public async Task UpdateAsync(Book book, CancellationToken cancellationToken)
         {
-            if (await _context.Books.AnyAsync(b => b.ISBN == book.ISBN && b.Id != book.Id, cancellationToken))
-            {
-                throw new InvalidOperationException("A book with the same ISBN already exists.");
-            }
-
             _context.Books.Update(book);
             await _context.SaveChangesAsync(cancellationToken);
         }
@@ -114,24 +95,12 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
         public async Task DeleteAsync(Book book, CancellationToken cancellationToken)
         {
             var existingBook = await GetByIdAsync(book.Id, cancellationToken);
-            if (existingBook != null)
-            {
-                _context.Books.Remove(existingBook);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Book with ID {book.Id} not found.");
-            }
+            _context.Books.Remove(existingBook);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task CreateAsync(Book book, CancellationToken cancellationToken)
         {
-            if (await _context.Books.AnyAsync(b => b.ISBN == book.ISBN, cancellationToken))
-            {
-                throw new InvalidOperationException("A book with this ISBN already exists.");
-            }
-
             await _context.Books.AddAsync(book, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }

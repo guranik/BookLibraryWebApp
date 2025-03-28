@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Authors;
-using BookLibraryBusinessLogicClassLibrary.Services;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -31,10 +30,6 @@ namespace BookLibraryAPI.Controllers
         public async Task<IActionResult> GetAuthorById(int id, CancellationToken cancellationToken)
         {
             var authorDto = await _authorService.GetAuthorByIdAsync(id, cancellationToken);
-            if (authorDto == null)
-            {
-                return NotFound();
-            }
             return Ok(authorDto);
         }
 
@@ -50,11 +45,7 @@ namespace BookLibraryAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAuthor(int id, [FromBody] AuthorDto authorDto, CancellationToken cancellationToken)
         {
-            if (id != authorDto.Id)
-            {
-                return BadRequest("ID из URL не соответствует ID автора.");
-            }
-
+            authorDto.Id = id;
             await _authorService.UpdateAuthorAsync(authorDto, cancellationToken);
             return NoContent();
         }

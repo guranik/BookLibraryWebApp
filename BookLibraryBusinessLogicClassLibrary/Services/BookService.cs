@@ -5,23 +5,12 @@ using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryDataAccessClassLibrary.Models;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Books;
 using BookLibraryBusinessLogicClassLibrary.DTOs.PagedResult;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
 using System.Threading;
+using BookLibraryBusinessLogicClassLibrary.Exceptions;
 
 namespace BookLibraryBusinessLogicClassLibrary.Services
 {
-    public interface IBookService
-    {
-        Task<PagedBooksDto> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize, CancellationToken cancellationToken);
-        Task<BookInfoDto> GetByIdAsync(int id, CancellationToken cancellationToken);
-        Task<Book> GetByISBNAsync(string isbn, CancellationToken cancellationToken);
-        Task IssueBookAsync(int bookId, int userId, CancellationToken cancellationToken);
-        Task ReturnBookAsync(int issuedBookId, CancellationToken cancellationToken);
-        Task CreateAsync(BookInfoDto bookDto, CancellationToken cancellationToken);
-        Task UpdateAsync(int id, BookInfoDto bookDto, CancellationToken cancellationToken);
-        Task DeleteAsync(int id, CancellationToken cancellationToken);
-        Task<bool> AreAllBooksIssuedAsync(string title, string authorName, CancellationToken cancellationToken);
-        Task<List<BookDto>> GetByAuthorAsync(int authorId, CancellationToken cancellationToken);
-    }
 
     public class BookService : IBookService
     {
@@ -43,6 +32,15 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
         public async Task<PagedBooksDto> GetPagedBooksAsync(string genre, string author, string bookName, int pageNumber, int pageSize, CancellationToken cancellationToken)
         {
             var pagedBooks = await _bookRepository.GetPagedBooksAsync(genre, author, bookName, pageNumber, pageSize, cancellationToken);
+            if (pagedBooks.Items.Count == 0)
+            {
+                bool allIssued = await AreAllBooksIssuedAsync(bookName, author, cancellationToken);
+                string message = allIssued
+                    ? $"Все книги '{bookName}' автора {author} выданы."
+                    : "Совпадений не найдено.";
+                throw new NotFoundException(message);
+            }
+
             var bookDtos = _mapper.Map<List<BookDto>>(pagedBooks.Items);
             return new PagedBooksDto
             {

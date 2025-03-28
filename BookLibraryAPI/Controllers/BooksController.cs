@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Books;
 using BookLibraryBusinessLogicClassLibrary.DTOs.PagedResult;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
-using BookLibraryBusinessLogicClassLibrary.Services;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -31,16 +30,9 @@ namespace BookLibraryAPI.Controllers
             CancellationToken cancellationToken = default)
         {
             var pagedBooksDto = await _bookService.GetPagedBooksAsync(genre, author, bookName, pageNumber, pageSize, cancellationToken);
-            if (pagedBooksDto.Items.Count == 0)
-            {
-                bool allIssued = await _bookService.AreAllBooksIssuedAsync(bookName, author, cancellationToken);
-                string message = allIssued
-                    ? $"Все книги '{bookName}' автора {author} выданы."
-                    : "Совпадений не найдено.";
-                return NotFound(new { Message = message });
-            }
             return Ok(pagedBooksDto);
         }
+
 
         [HttpPost("{bookId}/issue")]
         public async Task<IActionResult> IssueBook(int bookId, [FromBody] int userId, CancellationToken cancellationToken = default)
@@ -61,10 +53,6 @@ namespace BookLibraryAPI.Controllers
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken = default)
         {
             var bookDto = await _bookService.GetByIdAsync(id, cancellationToken);
-            if (bookDto == null)
-            {
-                return NotFound();
-            }
             return Ok(bookDto);
         }
 
@@ -79,10 +67,6 @@ namespace BookLibraryAPI.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Create([FromBody] BookInfoDto bookDto, CancellationToken cancellationToken = default)
         {
-            if (bookDto == null)
-            {
-                return BadRequest("Книга не может быть пустой.");
-            }
             await _bookService.CreateAsync(bookDto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = bookDto.Id }, bookDto);
         }
@@ -91,10 +75,6 @@ namespace BookLibraryAPI.Controllers
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, [FromBody] BookInfoDto bookDto, CancellationToken cancellationToken = default)
         {
-            if (bookDto == null || bookDto.Id != id)
-            {
-                return BadRequest("Несоответствие ID книги.");
-            }
             await _bookService.UpdateAsync(id, bookDto, cancellationToken);
             return NoContent();
         }

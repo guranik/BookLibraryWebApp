@@ -1,5 +1,5 @@
-﻿using BookLibraryBusinessLogicClassLibrary.DTOs.Errors;
-using Microsoft.AspNetCore.Diagnostics;
+﻿using BookLibraryBusinessLogicClassLibrary.Exceptions;
+using BookLibraryBusinessLogicClassLibrary.DTOs.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System;
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace BookLibraryAPI.Middleware
 {
-    public class ExceptionHandlingMiddleware : IExceptionHandler
+    public class ExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionHandlingMiddleware> _logger;
@@ -24,29 +24,37 @@ namespace BookLibraryAPI.Middleware
         {
             try
             {
-                await _next(context); // Call the next middleware
+                await _next(context);
+            }
+            catch (BadRequestException ex)
+            {
+                _logger.LogWarning(ex, "Bad request occurred.");
+                await HandleExceptionAsync(context, ex, HttpStatusCode.BadRequest);
+            }
+            catch (NotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Resource not found.");
+                await HandleExceptionAsync(context, ex, HttpStatusCode.NotFound);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while processing the request.");
-                await TryHandleAsync(context, ex, CancellationToken.None); // Pass CancellationToken
+                _logger.LogError(ex, "An unexpected error occurred.");
+                await HandleExceptionAsync(context, ex, HttpStatusCode.InternalServerError);
             }
         }
 
-        public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+        private static async Task HandleExceptionAsync(HttpContext context, Exception exception, HttpStatusCode statusCode)
         {
             var response = new ErrorResponse
             {
-                StatusCode = StatusCodes.Status500InternalServerError,
+                StatusCode = (int)statusCode,
                 ExceptionMessage = exception.Message,
-                Title = "Something went wrong"
+                Title = statusCode.ToString()
             };
 
-            httpContext.Response.ContentType = "application/json";
-            httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-            await httpContext.Response.WriteAsJsonAsync(response, cancellationToken); // Use CancellationToken here
-            return true;
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)statusCode;
+            await context.Response.WriteAsJsonAsync(response);
         }
     }
 }

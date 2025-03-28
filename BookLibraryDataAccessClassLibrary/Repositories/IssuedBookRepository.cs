@@ -1,16 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using BookLibraryDataAccessClassLibrary.Interfaces;
-using BookLibraryDataAccessClassLibrary.Exceptions;
 using BookLibraryDataAccessClassLibrary.Models;
-using Microsoft.EntityFrameworkCore;
 using BookLibraryDataAccessClassLibrary.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookLibraryDataAccessClassLibrary.Repositories
 {
-    using System.Threading;
-
     public class IssuedBookRepository : IAllIssuedBooks
     {
         private readonly Db15460Context _context;
@@ -49,17 +47,11 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
         public async Task<IssuedBook> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _context.IssuedBooks.Include(ib => ib.Book).Include(ib => ib.User)
-                .FirstOrDefaultAsync(ib => ib.Id == id, cancellationToken)
-                ?? throw new InvalidOperationException($"Issued book with ID {id} not found.");
+                .FirstOrDefaultAsync(ib => ib.Id == id, cancellationToken);
         }
 
         public async Task CreateAsync(IssuedBook issuedBook, CancellationToken cancellationToken)
         {
-            if (await _context.IssuedBooks.AnyAsync(b => b.UserId == issuedBook.UserId && b.BookId == issuedBook.BookId, cancellationToken))
-            {
-                throw new BookIsAlreadyIssuedException("Вы уже взяли данную книгу.");
-            }
-
             await _context.IssuedBooks.AddAsync(issuedBook, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
@@ -67,34 +59,20 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
         public async Task UpdateAsync(IssuedBook issuedBook, CancellationToken cancellationToken)
         {
             var existingIssuedBook = await GetByIdAsync(issuedBook.Id, cancellationToken);
-            if (existingIssuedBook != null)
-            {
-                existingIssuedBook.BookId = issuedBook.BookId;
-                existingIssuedBook.UserId = issuedBook.UserId;
-                existingIssuedBook.Issued = issuedBook.Issued;
-                existingIssuedBook.Return = issuedBook.Return;
+            existingIssuedBook.BookId = issuedBook.BookId;
+            existingIssuedBook.UserId = issuedBook.UserId;
+            existingIssuedBook.Issued = issuedBook.Issued;
+            existingIssuedBook.Return = issuedBook.Return;
 
-                _context.IssuedBooks.Update(existingIssuedBook);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Issued book with ID {issuedBook.Id} not found.");
-            }
+            _context.IssuedBooks.Update(existingIssuedBook);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteAsync(IssuedBook issuedBook, CancellationToken cancellationToken)
         {
             var existingIssuedBook = await GetByIdAsync(issuedBook.Id, cancellationToken);
-            if (existingIssuedBook != null)
-            {
-                _context.IssuedBooks.Remove(existingIssuedBook);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Issued book with ID {issuedBook.Id} not found.");
-            }
+            _context.IssuedBooks.Remove(existingIssuedBook);
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

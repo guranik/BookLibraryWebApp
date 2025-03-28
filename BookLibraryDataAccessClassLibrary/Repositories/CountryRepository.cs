@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryDataAccessClassLibrary.Models;
@@ -20,57 +21,31 @@ namespace BookLibraryDataAccessClassLibrary.Repositories
             => await _context.Countries.ToListAsync(cancellationToken);
 
         public async Task<Country> GetByIdAsync(int id, CancellationToken cancellationToken)
-        {
-            return await _context.Countries.FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
-                ?? throw new InvalidOperationException($"Страна с ID {id} не найдена.");
-        }
+            => await _context.Countries.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         public async Task CreateAsync(Country country, CancellationToken cancellationToken)
         {
-            if (!await CountryExistsAsync(country, cancellationToken))
-            {
-                await _context.Countries.AddAsync(country, cancellationToken);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            else
-            {
-                throw new InvalidOperationException("Страна с таким названием уже существует.");
-            }
+            await _context.Countries.AddAsync(country, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task UpdateAsync(Country country, CancellationToken cancellationToken)
         {
             var existingCountry = await GetByIdAsync(country.Id, cancellationToken);
-            if (existingCountry != null)
-            {
-                existingCountry.Name = country.Name;
+            existingCountry.Name = country.Name;
 
-                _context.Countries.Update(existingCountry);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Страна с ID {country.Id} не найдена.");
-            }
+            _context.Countries.Update(existingCountry);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         public async Task DeleteAsync(Country country, CancellationToken cancellationToken)
         {
             var existingCountry = await GetByIdAsync(country.Id, cancellationToken);
-            if (existingCountry != null)
-            {
-                _context.Countries.Remove(existingCountry);
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Страна с ID {country.Id} не найдена.");
-            }
+            _context.Countries.Remove(existingCountry);
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
         private async Task<bool> CountryExistsAsync(Country country, CancellationToken cancellationToken)
-        {
-            return await _context.Countries.AnyAsync(c => c.Name == country.Name, cancellationToken);
-        }
+            => await _context.Countries.AnyAsync(c => c.Name == country.Name, cancellationToken);
     }
 }

@@ -5,7 +5,7 @@ using BookLibraryBusinessLogicClassLibrary.DTOs.Countries;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using BookLibraryBusinessLogicClassLibrary.Services;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -30,23 +30,13 @@ namespace BookLibraryAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<CountryDto>> GetCountryById(int id, CancellationToken cancellationToken)
         {
-            var countryDto = await _countryService.GetCountryByIdAsync(id, cancellationToken);
-            if (countryDto == null)
-            {
-                return NotFound();
-            }
-            return Ok(countryDto);
+            return Ok(await _countryService.GetCountryByIdAsync(id, cancellationToken));
         }
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost]
         public async Task<ActionResult<CountryDto>> CreateCountry([FromBody] CountryDto countryDto, CancellationToken cancellationToken)
         {
-            if (countryDto == null)
-            {
-                return BadRequest("Country cannot be null.");
-            }
-
             await _countryService.CreateCountryAsync(countryDto, cancellationToken);
             return CreatedAtRoute(nameof(GetCountryById), new { id = countryDto.Id }, countryDto);
         }
@@ -55,10 +45,7 @@ namespace BookLibraryAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCountry(int id, [FromBody] CountryDto countryDto, CancellationToken cancellationToken)
         {
-            if (countryDto == null || countryDto.Id != id)
-            {
-                return BadRequest("Country data is invalid.");
-            }
+            countryDto.Id = id; // Set the ID from the route
             await _countryService.UpdateCountryAsync(countryDto, cancellationToken);
             return NoContent();
         }
@@ -67,12 +54,6 @@ namespace BookLibraryAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCountry(int id, CancellationToken cancellationToken)
         {
-            var country = await _countryService.GetCountryByIdAsync(id, cancellationToken);
-            if (country == null)
-            {
-                return NotFound();
-            }
-
             await _countryService.DeleteCountryAsync(id, cancellationToken);
             return NoContent();
         }

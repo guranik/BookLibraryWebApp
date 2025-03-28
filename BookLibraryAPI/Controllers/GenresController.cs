@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Genres;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using BookLibraryBusinessLogicClassLibrary.Services;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -31,10 +30,6 @@ namespace BookLibraryAPI.Controllers
         public async Task<IActionResult> GetGenreById(int id, CancellationToken cancellationToken)
         {
             var genreDto = await _genreService.GetGenreByIdAsync(id, cancellationToken);
-            if (genreDto == null)
-            {
-                return NotFound();
-            }
             return Ok(genreDto);
         }
 
@@ -42,11 +37,6 @@ namespace BookLibraryAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateGenre([FromBody] GenreDto genreDto, CancellationToken cancellationToken)
         {
-            if (genreDto == null)
-            {
-                return BadRequest("Genre cannot be null.");
-            }
-
             await _genreService.CreateGenreAsync(genreDto, cancellationToken);
             return CreatedAtAction(nameof(GetGenreById), new { id = genreDto.Id }, genreDto);
         }
@@ -55,11 +45,7 @@ namespace BookLibraryAPI.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateGenre(int id, [FromBody] GenreDto genreDto, CancellationToken cancellationToken)
         {
-            if (genreDto == null || genreDto.Id != id)
-            {
-                return BadRequest("Genre data is invalid.");
-            }
-
+            genreDto.Id = id;
             await _genreService.UpdateGenreAsync(genreDto, cancellationToken);
             return NoContent();
         }
@@ -68,12 +54,6 @@ namespace BookLibraryAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGenre(int id, CancellationToken cancellationToken)
         {
-            var genre = await _genreService.GetGenreByIdAsync(id, cancellationToken);
-            if (genre == null)
-            {
-                return NotFound();
-            }
-
             await _genreService.DeleteGenreAsync(id, cancellationToken);
             return NoContent();
         }

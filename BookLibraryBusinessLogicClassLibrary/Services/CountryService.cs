@@ -1,21 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryDataAccessClassLibrary.Models;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Countries;
+using BookLibraryBusinessLogicClassLibrary.Exceptions;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
 
 namespace BookLibraryBusinessLogicClassLibrary.Services
 {
-    public interface ICountryService
-    {
-        Task<List<CountryDto>> GetAllCountriesAsync(CancellationToken cancellationToken);
-        Task<CountryDto> GetCountryByIdAsync(int id, CancellationToken cancellationToken);
-        Task CreateCountryAsync(CountryDto countryDto, CancellationToken cancellationToken);
-        Task UpdateCountryAsync(CountryDto countryDto, CancellationToken cancellationToken);
-        Task DeleteCountryAsync(int id, CancellationToken cancellationToken);
-    }
-
     public class CountryService : ICountryService
     {
         private readonly IAllCountries _countryRepository;
@@ -36,28 +30,50 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
         public async Task<CountryDto> GetCountryByIdAsync(int id, CancellationToken cancellationToken)
         {
             var country = await _countryRepository.GetByIdAsync(id, cancellationToken);
+            if (country == null)
+            {
+                throw new NotFoundException($"Country with ID {id} not found.");
+            }
             return _mapper.Map<CountryDto>(country);
         }
 
         public async Task CreateCountryAsync(CountryDto countryDto, CancellationToken cancellationToken)
         {
+            if (countryDto == null)
+            {
+                throw new BadRequestException("Country cannot be null.");
+            }
+
             var country = _mapper.Map<Country>(countryDto);
             await _countryRepository.CreateAsync(country, cancellationToken);
         }
 
         public async Task UpdateCountryAsync(CountryDto countryDto, CancellationToken cancellationToken)
         {
-            var country = _mapper.Map<Country>(countryDto);
+            if (countryDto == null || countryDto.Id <= 0)
+            {
+                throw new BadRequestException("Country data is invalid.");
+            }
+
+            var country = await _countryRepository.GetByIdAsync(countryDto.Id, cancellationToken);
+            if (country == null)
+            {
+                throw new NotFoundException($"Country with ID {countryDto.Id} not found.");
+            }
+
+            country = _mapper.Map<Country>(countryDto);
             await _countryRepository.UpdateAsync(country, cancellationToken);
         }
 
         public async Task DeleteCountryAsync(int id, CancellationToken cancellationToken)
         {
             var country = await _countryRepository.GetByIdAsync(id, cancellationToken);
-            if (country != null)
+            if (country == null)
             {
-                await _countryRepository.DeleteAsync(country, cancellationToken);
+                throw new NotFoundException($"Country with ID {id} not found.");
             }
+
+            await _countryRepository.DeleteAsync(country, cancellationToken);
         }
     }
 }

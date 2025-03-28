@@ -3,9 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Users;
-using BookLibraryDataAccessClassLibrary.Interfaces;
-using BookLibraryBusinessLogicClassLibrary.Services;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Authentication;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
 
 namespace BookLibraryAPI.Controllers
 {
@@ -25,25 +24,15 @@ namespace BookLibraryAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterModel registerUserDto, CancellationToken cancellationToken)
         {
-            var result = await _userService.RegisterUserAsync(registerUserDto, cancellationToken);
-            if (result.Succeeded)
-            {
-                return Ok(new { Message = "User registered successfully." });
-            }
-
-            return BadRequest(result.Errors);
+            await _userService.RegisterUserAsync(registerUserDto, cancellationToken);
+            return Ok(new { Message = "User registered successfully." });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginModel loginModel, CancellationToken cancellationToken)
         {
             var (token, refreshToken) = await _userService.LoginUserAsync(loginModel, cancellationToken);
-            if (token != null)
-            {
-                return Ok(new { Token = token, RefreshToken = refreshToken });
-            }
-
-            return Unauthorized();
+            return Ok(new { Token = token, RefreshToken = refreshToken });
         }
 
         [Authorize]
@@ -51,10 +40,6 @@ namespace BookLibraryAPI.Controllers
         public async Task<IActionResult> GetUser(int id, CancellationToken cancellationToken)
         {
             var userDto = await _userService.GetUserAsync(id, cancellationToken);
-            if (userDto == null)
-            {
-                return NotFound();
-            }
             return Ok(userDto);
         }
 

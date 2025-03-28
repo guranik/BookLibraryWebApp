@@ -1,22 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryDataAccessClassLibrary.Models;
 using BookLibraryBusinessLogicClassLibrary.DTOs.Authors;
-using BookLibraryBusinessLogicClassLibrary.DTOs.PagedResult;
+using BookLibraryBusinessLogicClassLibrary.Exceptions;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
 
 namespace BookLibraryBusinessLogicClassLibrary.Services
 {
-    public interface IAuthorService
-    {
-        Task<List<AuthorDto>> GetAllAuthorsAsync(CancellationToken cancellationToken);
-        Task<AuthorDto> GetAuthorByIdAsync(int id, CancellationToken cancellationToken);
-        Task CreateAuthorAsync(AuthorDto authorDto, CancellationToken cancellationToken);
-        Task UpdateAuthorAsync(AuthorDto authorDto, CancellationToken cancellationToken);
-        Task DeleteAuthorAsync(int id, CancellationToken cancellationToken);
-    }
-
     public class AuthorService : IAuthorService
     {
         private readonly IAllAuthors _authorRepository;
@@ -37,6 +30,10 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
         public async Task<AuthorDto> GetAuthorByIdAsync(int id, CancellationToken cancellationToken)
         {
             var author = await _authorRepository.GetByIdAsync(id, cancellationToken);
+            if (author == null)
+            {
+                throw new NotFoundException($"Author with ID {id} not found.");
+            }
             return _mapper.Map<AuthorDto>(author);
         }
 
@@ -48,6 +45,12 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
 
         public async Task UpdateAuthorAsync(AuthorDto authorDto, CancellationToken cancellationToken)
         {
+            var existingAuthor = await _authorRepository.GetByIdAsync(authorDto.Id, cancellationToken);
+            if (existingAuthor == null)
+            {
+                throw new NotFoundException($"Author with ID {authorDto.Id} not found.");
+            }
+
             var author = _mapper.Map<Author>(authorDto);
             await _authorRepository.UpdateAsync(author, cancellationToken);
         }
@@ -55,10 +58,12 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
         public async Task DeleteAuthorAsync(int id, CancellationToken cancellationToken)
         {
             var author = await _authorRepository.GetByIdAsync(id, cancellationToken);
-            if (author != null)
+            if (author == null)
             {
-                await _authorRepository.DeleteAsync(author, cancellationToken);
+                throw new NotFoundException($"Author with ID {id} not found.");
             }
+
+            await _authorRepository.DeleteAsync(author, cancellationToken);
         }
     }
 }

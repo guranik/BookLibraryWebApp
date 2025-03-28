@@ -5,18 +5,11 @@ using BookLibraryDataAccessClassLibrary.Interfaces;
 using BookLibraryDataAccessClassLibrary.Models;
 using BookLibraryBusinessLogicClassLibrary.DTOs.IssuedBooks;
 using BookLibraryBusinessLogicClassLibrary.DTOs.PagedResult;
+using BookLibraryBusinessLogicClassLibrary.Interfaces;
+using BookLibraryBusinessLogicClassLibrary.Exceptions;
 
 namespace BookLibraryBusinessLogicClassLibrary.Services
 {
-    public interface IIssuedBookService
-    {
-        Task<PagedIssuedBooksDto> GetByUserAsync(int userId, int pageNumber, int pageSize, CancellationToken cancellationToken);
-        Task<IssuedBookDto> GetByIdAsync(int id, CancellationToken cancellationToken);
-        Task CreateAsync(IssuedBookDto issuedBookDto, CancellationToken cancellationToken);
-        Task UpdateAsync(int id, IssuedBookDto issuedBookDto, CancellationToken cancellationToken);
-        Task DeleteAsync(int id, CancellationToken cancellationToken);
-    }
-
     public class IssuedBookService : IIssuedBookService
     {
         private readonly IAllIssuedBooks _issuedBookRepository;
@@ -43,17 +36,29 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
         public async Task<IssuedBookDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             var issuedBook = await _issuedBookRepository.GetByIdAsync(id, cancellationToken);
+            if (issuedBook == null)
+            {
+                throw new NotFoundException($"Issued book with ID {id} not found.");
+            }
             return _mapper.Map<IssuedBookDto>(issuedBook);
         }
 
         public async Task CreateAsync(IssuedBookDto issuedBookDto, CancellationToken cancellationToken)
         {
+            if (issuedBookDto == null)
+            {
+                throw new BadRequestException("Issued Book cannot be null.");
+            }
             var issuedBook = _mapper.Map<IssuedBook>(issuedBookDto);
             await _issuedBookRepository.CreateAsync(issuedBook, cancellationToken);
         }
 
         public async Task UpdateAsync(int id, IssuedBookDto issuedBookDto, CancellationToken cancellationToken)
         {
+            if (issuedBookDto == null || issuedBookDto.Id != id)
+            {
+                throw new BadRequestException("Issued Book data is invalid.");
+            }
             var issuedBook = _mapper.Map<IssuedBook>(issuedBookDto);
             await _issuedBookRepository.UpdateAsync(issuedBook, cancellationToken);
         }
@@ -61,10 +66,11 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
         public async Task DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var issuedBook = await _issuedBookRepository.GetByIdAsync(id, cancellationToken);
-            if (issuedBook != null)
+            if (issuedBook == null)
             {
-                await _issuedBookRepository.DeleteAsync(issuedBook, cancellationToken);
+                throw new NotFoundException($"Issued book with ID {id} not found.");
             }
+            await _issuedBookRepository.DeleteAsync(issuedBook, cancellationToken);
         }
     }
 }
