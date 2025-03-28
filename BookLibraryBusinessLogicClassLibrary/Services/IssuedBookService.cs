@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using BookLibraryDataAccessClassLibrary.Interfaces;
@@ -49,6 +50,7 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             {
                 throw new BadRequestException("Issued Book cannot be null.");
             }
+
             var issuedBook = _mapper.Map<IssuedBook>(issuedBookDto);
             await _issuedBookRepository.CreateAsync(issuedBook, cancellationToken);
         }
@@ -59,8 +61,18 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             {
                 throw new BadRequestException("Issued Book data is invalid.");
             }
-            var issuedBook = _mapper.Map<IssuedBook>(issuedBookDto);
-            await _issuedBookRepository.UpdateAsync(issuedBook, cancellationToken);
+
+            var existingIssuedBook = await _issuedBookRepository.GetByIdAsync(id, cancellationToken);
+            if (existingIssuedBook == null)
+            {
+                throw new NotFoundException($"Issued book with ID {id} not found.");
+            }
+
+            existingIssuedBook.BookId = issuedBookDto.BookId;
+            existingIssuedBook.Issued = issuedBookDto.Issued;
+            existingIssuedBook.Return = issuedBookDto.Return;
+
+            await _issuedBookRepository.UpdateAsync(existingIssuedBook, cancellationToken);
         }
 
         public async Task DeleteAsync(int id, CancellationToken cancellationToken)

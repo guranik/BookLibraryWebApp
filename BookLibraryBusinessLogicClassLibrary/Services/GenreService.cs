@@ -55,14 +55,13 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
                 throw new BadRequestException("Genre data is invalid.");
             }
 
-            var genre = await _genreRepository.GetByIdAsync(genreDto.Id, cancellationToken);
-            if (genre == null)
+            var existingGenre = await _genreRepository.GetByIdAsync(genreDto.Id, cancellationToken);
+            if (existingGenre == null)
             {
                 throw new NotFoundException($"Genre with ID {genreDto.Id} not found.");
             }
 
-            genre = _mapper.Map<Genre>(genreDto);
-            await _genreRepository.UpdateAsync(genre, cancellationToken);
+            await _genreRepository.UpdateAsync(existingGenre, cancellationToken);
         }
 
         public async Task DeleteGenreAsync(int id, CancellationToken cancellationToken)

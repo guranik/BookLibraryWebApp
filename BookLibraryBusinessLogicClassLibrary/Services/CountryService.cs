@@ -55,14 +55,13 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
                 throw new BadRequestException("Country data is invalid.");
             }
 
-            var country = await _countryRepository.GetByIdAsync(countryDto.Id, cancellationToken);
-            if (country == null)
+            var existingCountry = await _countryRepository.GetByIdAsync(countryDto.Id, cancellationToken);
+            if (existingCountry == null)
             {
                 throw new NotFoundException($"Country with ID {countryDto.Id} not found.");
             }
 
-            country = _mapper.Map<Country>(countryDto);
-            await _countryRepository.UpdateAsync(country, cancellationToken);
+            await _countryRepository.UpdateAsync(existingCountry, cancellationToken);
         }
 
         public async Task DeleteCountryAsync(int id, CancellationToken cancellationToken)

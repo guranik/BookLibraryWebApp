@@ -6,8 +6,8 @@ namespace BookLibraryBusinessLogicClassLibrary.Interfaces
     {
         Task<List<AuthorDto>> GetAllAuthorsAsync(CancellationToken cancellationToken);
         Task<AuthorDto> GetAuthorByIdAsync(int id, CancellationToken cancellationToken);
-        Task CreateAuthorAsync(AuthorDto authorDto, CancellationToken cancellationToken);
-        Task UpdateAuthorAsync(AuthorDto authorDto, CancellationToken cancellationToken);
+        Task CreateAuthorAsync(AuthorInfoDto authorDto, CancellationToken cancellationToken);
+        Task UpdateAuthorAsync(AuthorInfoDto authorDto, CancellationToken cancellationToken);
         Task DeleteAuthorAsync(int id, CancellationToken cancellationToken);
     }
 }

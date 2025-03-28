@@ -11,7 +11,6 @@ using BookLibraryBusinessLogicClassLibrary.Exceptions;
 
 namespace BookLibraryBusinessLogicClassLibrary.Services
 {
-
     public class BookService : IBookService
     {
         private readonly IAllBooks _bookRepository;
@@ -53,12 +52,15 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
         public async Task<BookInfoDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             var book = await _bookRepository.GetByIdAsync(id, cancellationToken);
+            if (book == null) throw new NotFoundException("Книга с таким ID не найдена.");
             return _mapper.Map<BookInfoDto>(book);
         }
 
-        public async Task<Book> GetByISBNAsync(string isbn, CancellationToken cancellationToken)
+        public async Task<BookInfoDto> GetByISBNAsync(string isbn, CancellationToken cancellationToken)
         {
-            return await _bookRepository.GetByISBNAsync(isbn, cancellationToken);
+            var book = await _bookRepository.GetByISBNAsync(isbn, cancellationToken);
+            if (book == null) throw new NotFoundException("Книга с таким ISBN не найдена.");
+            return _mapper.Map<BookInfoDto>(book);
         }
 
         public async Task IssueBookAsync(int bookId, int userId, CancellationToken cancellationToken)
@@ -90,15 +92,34 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
 
         public async Task CreateAsync(BookInfoDto bookDto, CancellationToken cancellationToken)
         {
+            var author = await _authorService.GetByIdAsync(bookDto.AuthorId, cancellationToken);
+            if (author == null) throw new NotFoundException($"Автор с ID {bookDto.AuthorId} не найден.");
+
+            var genre = await _genresService.GetByIdAsync(bookDto.GenreId, cancellationToken);
+            if (genre == null) throw new NotFoundException($"Жанр с ID {bookDto.GenreId} не найден.");
+
             var book = _mapper.Map<Book>(bookDto);
-            book.Author = await _authorService.GetByIdAsync(bookDto.AuthorId, cancellationToken);
-            book.Genre = await _genresService.GetByIdAsync(bookDto.GenreId, cancellationToken);
+            book.Author = author;
+            book.Genre = genre;
             await _bookRepository.CreateAsync(book, cancellationToken);
         }
 
         public async Task UpdateAsync(int id, BookInfoDto bookDto, CancellationToken cancellationToken)
         {
             var existingBook = await _bookRepository.GetByIdAsync(id, cancellationToken);
+            if (existingBook == null) throw new NotFoundException($"Книга с ID {id} не найдена.");
+
+            var author = await _authorService.GetByIdAsync(bookDto.AuthorId, cancellationToken);
+            if (author == null) throw new NotFoundException($"Автор с ID {bookDto.AuthorId} не найден.");
+
+            var genre = await _genresService.GetByIdAsync(bookDto.GenreId, cancellationToken);
+            if (genre == null) throw new NotFoundException($"Жанр с ID {bookDto.GenreId} не найден.");
+
+            if (existingBook.ISBN != null && !string.Equals(bookDto.ISBN, existingBook.ISBN))
+            {
+                var book = await _bookRepository.GetByISBNAsync(bookDto.ISBN, cancellationToken);
+                if (book != null) throw new BadRequestException($"Книга с таким ISBN уже существует.");
+            }
             existingBook.Title = bookDto.Title;
             existingBook.Description = bookDto.Description;
             existingBook.BookNumber = bookDto.BookNumber;
@@ -112,6 +133,8 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
         public async Task DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var book = await _bookRepository.GetByIdAsync(id, cancellationToken);
+            if (book == null) throw new NotFoundException($"Книга с ID {id} не найдена.");
+
             await _bookRepository.DeleteAsync(book, cancellationToken);
         }
 

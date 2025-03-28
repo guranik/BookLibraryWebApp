@@ -13,11 +13,13 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
     public class AuthorService : IAuthorService
     {
         private readonly IAllAuthors _authorRepository;
+        private readonly IAllCountries _countryRepository; // Assuming you have a country repository
         private readonly IMapper _mapper;
 
-        public AuthorService(IAllAuthors authorRepository, IMapper mapper)
+        public AuthorService(IAllAuthors authorRepository, IAllCountries countryRepository, IMapper mapper)
         {
             _authorRepository = authorRepository;
+            _countryRepository = countryRepository;
             _mapper = mapper;
         }
 
@@ -37,13 +39,19 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
             return _mapper.Map<AuthorDto>(author);
         }
 
-        public async Task CreateAuthorAsync(AuthorDto authorDto, CancellationToken cancellationToken)
+        public async Task CreateAuthorAsync(AuthorInfoDto authorDto, CancellationToken cancellationToken)
         {
+            var country = await _countryRepository.GetByIdAsync(authorDto.CountryId, cancellationToken);
+            if (country == null)
+            {
+                throw new NotFoundException($"Country with ID {authorDto.CountryId} not found.");
+            }
+
             var author = _mapper.Map<Author>(authorDto);
             await _authorRepository.CreateAsync(author, cancellationToken);
         }
 
-        public async Task UpdateAuthorAsync(AuthorDto authorDto, CancellationToken cancellationToken)
+        public async Task UpdateAuthorAsync(AuthorInfoDto authorDto, CancellationToken cancellationToken)
         {
             var existingAuthor = await _authorRepository.GetByIdAsync(authorDto.Id, cancellationToken);
             if (existingAuthor == null)
@@ -51,8 +59,18 @@ namespace BookLibraryBusinessLogicClassLibrary.Services
                 throw new NotFoundException($"Author with ID {authorDto.Id} not found.");
             }
 
-            var author = _mapper.Map<Author>(authorDto);
-            await _authorRepository.UpdateAsync(author, cancellationToken);
+            var country = await _countryRepository.GetByIdAsync(authorDto.CountryId, cancellationToken);
+            if (country == null)
+            {
+                throw new NotFoundException($"Country with ID {authorDto.CountryId} not found.");
+            }
+
+            existingAuthor.Name = authorDto.Name;
+            existingAuthor.Surname = authorDto.Surname;
+            existingAuthor.BirthDate = authorDto.BirthDate;
+            existingAuthor.CountryId = authorDto.CountryId;
+
+            await _authorRepository.UpdateAsync(existingAuthor, cancellationToken);
         }
 
         public async Task DeleteAuthorAsync(int id, CancellationToken cancellationToken)

@@ -35,7 +35,7 @@ namespace BookLibraryAPI.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost]
-        public async Task<IActionResult> CreateAuthor([FromBody] AuthorDto authorDto, CancellationToken cancellationToken)
+        public async Task<IActionResult> CreateAuthor([FromBody] AuthorInfoDto authorDto, CancellationToken cancellationToken)
         {
             await _authorService.CreateAuthorAsync(authorDto, cancellationToken);
             return CreatedAtAction(nameof(GetAuthorById), new { id = authorDto.Id }, authorDto);
@@ -43,7 +43,7 @@ namespace BookLibraryAPI.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateAuthor(int id, [FromBody] AuthorDto authorDto, CancellationToken cancellationToken)
+        public async Task<IActionResult> UpdateAuthor(int id, [FromBody] AuthorInfoDto authorDto, CancellationToken cancellationToken)
         {
             authorDto.Id = id;
             await _authorService.UpdateAuthorAsync(authorDto, cancellationToken);
