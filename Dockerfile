@@ -12,11 +12,15 @@ WORKDIR /src
 COPY ["BookLibraryAPI/BookLibraryAPI.csproj", "BookLibraryAPI/"]
 COPY ["BookLibraryClient/BookLibraryClient.csproj", "BookLibraryClient/"]
 COPY ["BookLibraryWebAPITests/BookLibraryWebAPITests.csproj", "BookLibraryWebAPITests/"]
+COPY ["BookLibraryDataAccessClassLibrary/BookLibraryDataAccessClassLibrary.csproj", "BookLibraryDataAccessClassLibrary/"]
+COPY ["BookLibraryBusinessLogicClassLibrary/BookLibraryBusinessLogicClassLibrary.csproj", "BookLibraryBusinessLogicClassLibrary/"]
 
 # Восстанавливаем зависимости
 RUN dotnet restore "BookLibraryAPI/BookLibraryAPI.csproj" && \
     dotnet restore "BookLibraryClient/BookLibraryClient.csproj" && \
-    dotnet restore "BookLibraryWebAPITests/BookLibraryWebAPITests.csproj"
+    dotnet restore "BookLibraryWebAPITests/BookLibraryWebAPITests.csproj" && \
+    dotnet restore "BookLibraryDataAccessClassLibrary/BookLibraryDataAccessClassLibrary.csproj" && \
+    dotnet restore "BookLibraryBusinessLogicClassLibrary/BookLibraryBusinessLogicClassLibrary.csproj"
 
 # Копируем все остальные файлы
 COPY . .
